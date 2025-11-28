@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import {TrendingUp, PieChart, Sparkles, ArrowRight, Shield, Zap } from "lucide-react";
 import Image from "next/image";
@@ -32,7 +33,7 @@ export default function Page() {
               </p>
 
               {/* CTA Button */}
-              <button className="group bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-4 px-12 rounded-2xl shadow-xl transition-all hover:-translate-y-1 hover:shadow-2xl flex items-center gap-3 text-lg">
+              <button onClick={() => window.location.href = '/signup'} className="group bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-4 px-12 rounded-2xl shadow-xl transition-all hover:-translate-y-1 hover:shadow-2xl flex items-center gap-3 text-lg">
                 Get Started
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
