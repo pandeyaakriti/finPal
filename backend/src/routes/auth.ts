@@ -3,6 +3,7 @@ import User from "../models/User";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
+//import authMiddleware from "../middleware/auth";
 
 const router = Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -76,5 +77,6 @@ router.post("/google-login", async (req: Request, res: Response) => {
     res.status(400).json({ detail: err.message || "Google login failed" });
   }
 });
+
 
 export default router;

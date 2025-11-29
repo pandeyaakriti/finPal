@@ -1,3 +1,4 @@
+// app/signup/page.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -27,7 +28,7 @@ export default function SignupPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Signup failed");
 
-      localStorage.setItem("token", data.token); // store JWT
+      localStorage.setItem("token", data.token);
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.message);
@@ -37,27 +38,27 @@ export default function SignupPage() {
   };
 
   const handleGoogleSuccess = async (credential: string) => {
-  setLoading(true);
-  setError("");
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/google-login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: credential }),
-    });
+    setLoading(true);
+    setError("");
+    try {
+      // Send token in POST JSON body
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/google-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: credential }),
+      });
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || "Google login failed");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Google login failed");
 
-    localStorage.setItem("token", data.token);
-    router.push("/dashboard");
-  } catch (err: unknown) {
-    setError(err instanceof Error ? err.message : "Something went wrong");
-  } finally {
-    setLoading(false);
-  }
-};
-
+      localStorage.setItem("token", data.token);
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-800 px-4">
