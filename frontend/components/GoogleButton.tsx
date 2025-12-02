@@ -42,7 +42,7 @@ export default function GoogleButton({ onSuccess }: GoogleButtonProps) {
       window.google.accounts.id.renderButton(buttonDivRef.current, {
         theme: "outline",
         size: "large",
-        width: "90%",
+        width: "350",
         text: "signin_with",
       });
     }
