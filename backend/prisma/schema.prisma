@@ -1,0 +1,36 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") 
+}
+// Models
+//removed user model for now. pachi add garne 
+// model User {    
+//   id        Int      @id @default(autoincrement())
+//   name      String
+//   email     String   @unique
+//   expenses  Expense[]
+//   incomes   Income[]
+// }
+model Expense {
+  id        Int      @id @default(autoincrement())
+  //user      User     @relation(fields: [userId], references: [id])
+  userId    String //mongo ko userid
+  amount    Float
+  category  String
+  remark    String?
+  date      DateTime @default(now())
+
+  //users User[]
+}
+model Income {
+  id        Int      @id @default(autoincrement())
+  //user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  amount    Float
+  source    String
+  date      DateTime @default(now())
+}
