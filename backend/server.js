@@ -1,10 +1,19 @@
+//backend/server.js
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+
 const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users'); // require instead of import
+const userRoutes = require('./routes/users'); 
+
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+const expenseRoutes = require('./src/routes/expenses').default;
+const incomeRoutes = require('./src/routes/income').default;
+
 
 const app = express();
 
@@ -19,6 +28,8 @@ app.use(cookieParser());
 // Routes
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
+app.use('/expenses', expenseRoutes);
+app.use('/incomes', incomeRoutes);
 
 // Connect to MongoDB and start server
 mongoose.connect(process.env.MONGO_URI) // make sure env key matches
