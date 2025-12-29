@@ -1,3 +1,4 @@
+// backend/src/routes/income.ts
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { authMiddleware } from "../middleware/auth";
@@ -7,13 +8,13 @@ const router = Router();
 
 router.post("/", authMiddleware, async (req: any, res) => {
   try {
-    const { source, amount, remark } = req.body;
+    const { source, amount} = req.body;
 
     const income = await prisma.income.create({
       data: {
         userId: req.userId,
         source,
-        amount,
+        amount,  
       },
     });
 

@@ -32,5 +32,6 @@ model Income {
   userId    String
   amount    Float
   source    String
+  remark   String?
   date      DateTime @default(now())
 }

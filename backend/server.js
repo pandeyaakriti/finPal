@@ -14,9 +14,7 @@ const prisma = new PrismaClient();
 const expenseRoutes = require('./src/routes/expenses').default;
 const incomeRoutes = require('./src/routes/income').default;
 
-
 const app = express();
-
 // Middleware
 app.use(cors({
   origin: 'http://localhost:3000', // Next.js frontend
