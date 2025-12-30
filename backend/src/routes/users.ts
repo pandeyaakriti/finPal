@@ -1,9 +1,8 @@
+//backend/src/routes/users.ts
 import { Router, Request, Response } from "express";
 import User from "../models/User";
 import { authMiddleware } from "../middleware/auth";
-
 const router = Router();
-
 // GET /users/me
 router.get("/me", authMiddleware, async (req: any, res: Response) => {
   try {

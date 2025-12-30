@@ -1,3 +1,4 @@
+//backend/src/routes/auth.ts
 import { Router, Request, Response } from "express";
 import User from "../models/User";
 import bcrypt from "bcryptjs";
@@ -7,7 +8,6 @@ import { OAuth2Client, TokenPayload } from "google-auth-library";
 
 const router = Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
 // ---------------- Email/password signup ----------------
 router.post("/signup", async (req: Request, res: Response) => {
   try {
@@ -77,6 +77,4 @@ router.post("/google-login", async (req: Request, res: Response) => {
     res.status(400).json({ detail: err.message || "Google login failed" });
   }
 });
-
-
 export default router;
