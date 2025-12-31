@@ -1,39 +1,63 @@
 // backend/src/routes/income.ts
-import { Router } from "express";
+import { Router, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { authMiddleware } from "../middleware/auth";
 
-const prisma = new PrismaClient();
 const router = Router();
+const prisma = new PrismaClient();
 
-router.post("/", authMiddleware, async (req: any, res) => {
+// GET all income for logged-in user
+router.get("/", authMiddleware, async (req: any, res: Response) => {
   try {
-    const { source, amount} = req.body;
-
-    const income = await prisma.income.create({
-      data: {
-        userId: req.userId,
-        source,
-        amount,  
-      },
-    });
-
-    res.json(income);
-  } catch (err: any) {
-    res.status(500).json({ detail: err.message });
-  }
-});
-
-router.get("/", authMiddleware, async (req: any, res) => {
-  try {
-    const income = await prisma.income.findMany({
+    const incomes = await prisma.income.findMany({
       where: { userId: req.userId },
       orderBy: { date: "desc" },
     });
+    res.json(incomes);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ detail: "Server error" });
+  }
+});
 
+// POST create new income
+router.post("/", authMiddleware, async (req: any, res: Response) => {
+  try {
+    const { amount, source, remark, date } = req.body;
+    
+    const income = await prisma.income.create({
+      data: {
+        userId: req.userId,
+        amount: parseFloat(amount),
+        source,
+        remark,
+        date: date ? new Date(date) : new Date(),
+      },
+    });
+    
     res.json(income);
-  } catch (err: any) {
-    res.status(500).json({ detail: err.message });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ detail: "Server error" });
+  }
+});
+
+// DELETE income
+router.delete("/:id", authMiddleware, async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    await prisma.income.delete({
+      where: { 
+        id: parseInt(id),
+        userId: req.userId,
+      },
+    });
+    
+    res.json({ message: "Income deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ detail: "Server error" });
   }
 });
 
