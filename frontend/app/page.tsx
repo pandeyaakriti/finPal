@@ -30,9 +30,9 @@ export default function Page() {
             <p className="text-gray-500 text-lg sm:text-xl max-w-3xl mx-auto mb-12 leading-relaxed">
               finPal autonomously analyzes your spending, detects emotional patterns,
               <br />
-              and provides actionable insights. It's not a dashboard,
+              and provides actionable insights. Its not a dashboard,
               <br />
-              it's an AI advisor that plans and acts for you.
+              its an AI advisor that plans and acts for you.
             </p>
 
             {/* CTA Buttons */}
