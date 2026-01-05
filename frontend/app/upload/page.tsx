@@ -54,9 +54,9 @@ export default function CsvUploadPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await fetch('/api/upload-csv', {
-        method: 'POST',
-        body: formData,
+      const res = await fetch('http://localhost:5000/api/upload-csv', {
+      method: 'POST',
+      body: formData,
       });
 
       const data = await res.json();

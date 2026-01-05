@@ -46,3 +46,11 @@ model Income {
   
   @@index([userId])
 }
+model Transactions {
+  id           Int     @id @default(autoincrement())
+  remarks      String?
+  amountPlus   Float
+  amountMinus  Float
+  balance      Float
+}
+

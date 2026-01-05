@@ -8,6 +8,10 @@ import userRoutes from "./routes/users";
 import expenseRoutes from "./routes/expenses";
 import incomeRoutes from "./routes/income";
 import dotenv from "dotenv";
+import csvRoutes from "./routes/csv";
+
+
+
 
 dotenv.config();
 
@@ -21,6 +25,7 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 //routes
+app.use("/api", csvRoutes);
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/expenses", expenseRoutes);
