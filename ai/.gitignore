@@ -1,0 +1,18 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# HuggingFace / Torch
+model/
+checkpoint-*/
+runs/
+*.bin
+*.pt
+*.safetensors
+trainer_state.json
+optimizer.pt
+scheduler.pt
+
+# HuggingFace cache
+.cache/
