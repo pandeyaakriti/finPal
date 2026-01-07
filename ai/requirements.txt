@@ -4,3 +4,6 @@ datasets
 pandas
 scikit-learn
 numpy
+matplotlib
+seaborn
+wordcloud
