@@ -1,7 +1,16 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
+from predict import predict
 
-app = FastAPI(title="FinPal AI Service")
+app = FastAPI()
 
-@app.get("/")
-def root():
-    return {"message": "AI service running!"}
+class Input(BaseModel):
+    text: str
+
+class Output(BaseModel):
+    label: int
+
+@app.post("/predict", response_model=Output)
+async def predict_text(data: Input):
+    label = predict(data.text)
+    return {"label": label}

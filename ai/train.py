@@ -88,14 +88,15 @@ def tokenize_fn(batch):
         batch["text"],
         truncation=True,
         padding="max_length",
-        max_length=128,  # increased from 48 for better context
+        max_length=96,  # reduced from 128 to save RAM
         return_attention_mask=True
     )
-    # Rename label_id to labels for the model
     tokenized["labels"] = batch["label_id"]
     return tokenized
 
 tokenized_dataset = dataset.map(tokenize_fn, batched=True)
+
+
 
 
 # -----------------------------------------
@@ -109,6 +110,9 @@ model = DistilBertForSequenceClassification.from_pretrained(
     dropout=0.3,  # added dropout for regularization
     attention_dropout=0.3
 )
+#tweaks
+model.config.use_cache = False
+model.gradient_checkpointing_enable()
 
 
 # -----------------------------------------
@@ -165,25 +169,28 @@ class WeightedTrainer(Trainer):
 # -----------------------------------------
 # 9. Improved training arguments
 # -----------------------------------------
+from transformers import TrainingArguments
+
 training_args = TrainingArguments(
     output_dir="./model",
-    num_train_epochs=10,  # increased epochs
-    per_device_train_batch_size=32,  # increased batch size
-    per_device_eval_batch_size=32,
-    learning_rate=2e-5,  # slightly lower learning rate
-    weight_decay=0.01,  # added weight decay for regularization
-    warmup_steps=500,  # learning rate warmup
+    num_train_epochs=8,
+    per_device_train_batch_size=4,  # safe for 12GB RAM
+    per_device_eval_batch_size=4,
+    gradient_accumulation_steps=8,  # simulate effective batch size 32
+    learning_rate=2e-5,
+    weight_decay=0.01,
+    warmup_steps=100,
     eval_strategy="epoch",
     save_strategy="epoch",
     logging_steps=50,
     load_best_model_at_end=True,
-    metric_for_best_model="f1_weighted",  # optimize for F1 instead of loss
+    metric_for_best_model="f1_weighted",
     greater_is_better=True,
     report_to="none",
-    save_total_limit=3,  # keep only 3 best checkpoints
-    fp16=torch.cuda.is_available(),  # mixed precision if GPU available
+    save_total_limit=2,
+    fp16=False,  # CPU only
+    gradient_checkpointing=True,
 )
-
 
 # -----------------------------------------
 # 10. Train with early stopping

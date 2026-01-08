@@ -1,28 +1,39 @@
 import torch
 import json
 import re
+import os
 from transformers import DistilBertTokenizerFast, DistilBertForSequenceClassification
 import torch.nn.functional as F
+from dotenv import load_dotenv
 
-MODEL_PATH = "./model"
+# Load .env
+load_dotenv()
+HF_TOKEN = os.getenv("HF_TOKEN")
+MODEL_ID = os.getenv("MODEL_ID", "your-username/finpal-distilbert-v1")  # default if not set
 
-# Load mapping
-with open("label_map.json", "r") as f:
-    maps = json.load(f)
+# Load label mapping from HuggingFace repo (optional: keep local copy)
+LABEL_MAP_FILE = "label_map.json"
+if os.path.exists(LABEL_MAP_FILE):
+    with open(LABEL_MAP_FILE, "r") as f:
+        maps = json.load(f)
+else:
+    # For teammates: try to download from HF repo if private, you may need to include in repo
+    raise FileNotFoundError("label_map.json not found. Please include in repo.")
 
 id2label = {int(k): v for k, v in maps["id2label"].items()}
 label2id = {v: int(k) for k, v in maps["id2label"].items()}
 
-# Load model + tokenizer
-tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_PATH)
-model = DistilBertForSequenceClassification.from_pretrained(MODEL_PATH)
+# Load model and tokenizer from HuggingFace (works for teammates without local model)
+print("⏳ Loading model from HuggingFace...")
+tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_ID, use_auth_token=HF_TOKEN)
+model = DistilBertForSequenceClassification.from_pretrained(MODEL_ID, use_auth_token=HF_TOKEN)
 model.eval()
 
 # Use GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
-print(f"Model loaded on: {device}")
+print(f"✅ Model loaded on: {device}")
 print(f"Available categories: {list(id2label.values())}\n")
 
 
@@ -44,9 +55,8 @@ def predict(text, top_k=3):
     Returns:
         dict with primary prediction and top-k predictions
     """
-    # Preprocess
     text = preprocess_text(text)
-    
+
     # Tokenize
     inputs = tokenizer(
         text, 
@@ -55,25 +65,19 @@ def predict(text, top_k=3):
         padding="max_length", 
         max_length=128
     )
-    
-    # Move to device
+
     inputs = {k: v.to(device) for k, v in inputs.items()}
-    
+
     # Predict
     with torch.no_grad():
         logits = model(**inputs).logits
-    
-    # Get probabilities
+
     probs = F.softmax(logits, dim=-1)[0]
-    
-    # Get top-k predictions
     top_probs, top_indices = torch.topk(probs, min(top_k, len(id2label)))
-    
-    # Primary prediction
+
     pred_id = top_indices[0].item()
     confidence = top_probs[0].item()
-    
-    # Build top-k predictions
+
     top_predictions = [
         {
             "category": id2label[idx.item()],
@@ -81,15 +85,14 @@ def predict(text, top_k=3):
         }
         for prob, idx in zip(top_probs, top_indices)
     ]
-    
-    # Confidence level interpretation
+
     if confidence >= 0.7:
         confidence_level = "high"
     elif confidence >= 0.4:
         confidence_level = "medium"
     else:
         confidence_level = "low"
-    
+
     return {
         "text": text,
         "category": id2label[pred_id],
@@ -107,13 +110,12 @@ def predict_batch(texts):
     return results
 
 
-# Test examples
 if __name__ == "__main__":
     print("="*60)
-    print("TRANSACTION CATEGORY PREDICTOR")
+    print("TRANSACTION CATEGORY PREDICTOR (TEAM-FRIENDLY)")
     print("="*60)
-    
-    # Test with some examples
+
+    # Test examples
     test_examples = [
         "Netflix subscription monthly",
         "Uber ride to downtown",
@@ -121,7 +123,7 @@ if __name__ == "__main__":
         "Transfer to savings account",
         "Doctor visit copay"
     ]
-    
+
     print("\n📊 Testing with sample transactions:\n")
     for example in test_examples:
         result = predict(example)
@@ -132,34 +134,31 @@ if __name__ == "__main__":
             alternatives = ', '.join([f"{p['category']} ({p['confidence']:.1%})" for p in result['top_predictions'][1:]])
             print(f"  → Alternatives: {alternatives}")
         print()
-    
+
     # Interactive mode
     print("\n" + "="*60)
     print("INTERACTIVE MODE - Enter transaction remarks to predict")
     print("Type 'quit' or 'exit' to stop")
     print("="*60 + "\n")
-    
+
     while True:
         try:
             user_input = input("Enter remark: ").strip()
-            
             if user_input.lower() in ['quit', 'exit', 'q']:
                 print("👋 Goodbye!")
                 break
-                
             if not user_input:
                 continue
-            
+
             result = predict(user_input)
             print(f"\n✓ Category: {result['category']}")
             print(f"  Confidence: {result['confidence']:.2%} ({result['confidence_level']})")
-            
+
             if result['confidence'] < 0.7:
                 print(f"  Other possibilities:")
                 for pred in result['top_predictions'][1:]:
                     print(f"    - {pred['category']}: {pred['confidence']:.1%}")
             print()
-            
         except KeyboardInterrupt:
             print("\n👋 Goodbye!")
             break

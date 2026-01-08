@@ -4,10 +4,10 @@ __pycache__/
 *.pyc
 
 # HuggingFace / Torch
-model/
+/model
+-*bin
 checkpoint-*/
 runs/
-*.bin
 *.pt
 *.safetensors
 trainer_state.json
@@ -16,3 +16,5 @@ scheduler.pt
 
 # HuggingFace cache
 .cache/
+
+.env
