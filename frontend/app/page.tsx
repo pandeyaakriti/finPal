@@ -1,3 +1,4 @@
+//frontend/app/page.tsx
 "use client";
 import React from "react";
 import { TrendingUp, PieChart, Sparkles, ArrowRight, Shield, Zap, Brain, Target, Lightbulb, Rocket, Link as LinkIcon, Maximize } from "lucide-react";

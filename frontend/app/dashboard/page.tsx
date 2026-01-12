@@ -50,8 +50,8 @@ export default function Dashboard() {
       <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="text-center">
           <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-emerald-200 dark:border-emerald-900 mx-auto"></div>
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-transparent border-t-emerald-600 dark:border-t-emerald-400 mx-auto absolute top-0 left-1/2 -translate-x-1/2"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#7ECBAA] dark:border-[#65a187] mx-auto"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#7ECBAA] dark:border-[#7ECBAA] mx-auto absolute top-0 left-1/2 -translate-x-1/2"></div>
           </div>
           <p className="mt-6 text-gray-600 dark:text-gray-300 font-medium">
             Loading your dashboard...
@@ -91,7 +91,7 @@ export default function Dashboard() {
 
         {/* Main */}
         <main className="max-w-7xl mx-auto w-full px-6 py-8">
-          <div className="bg-linear-to-r from-[#299c46] to-[#6ae088] rounded-2xl p-8 text-white shadow-xl">
+          <div className="bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] rounded-2xl p-8 text-white shadow-xl">
             <div className="flex items-center space-x-4 mb-4">
               <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">
                 {(user?.username || user?.email || 'U')[0].toUpperCase()}

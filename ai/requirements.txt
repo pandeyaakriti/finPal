@@ -11,4 +11,4 @@ fastapi
 uvicorn
 python-dotenv
 huggingface-hub
-
+dotenv 

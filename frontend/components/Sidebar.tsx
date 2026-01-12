@@ -20,7 +20,7 @@ export default function Sidebar({ headerTitle }: { headerTitle?: string }) {
   return (
     <aside className="w-64 min-h-screen bg-[#16202A] text-white flex flex-col">
       {/* Header */}
-      <div className="px-6 py-6 text-2xl font-bold text-green-400 border-b border-white/10">
+      <div className="px-6 py-5.5 text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] border-b border-white/10">
         finPal
       </div>
 
@@ -35,7 +35,7 @@ export default function Sidebar({ headerTitle }: { headerTitle?: string }) {
               href={item.href}
               className={`block px-4 py-3 rounded-xl transition-all ${
                 isActive
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-400 text-white font-semibold'
+                  ? 'bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] text-white font-semibold'
                   : 'text-gray-300 hover:bg-white/10'
               }`}
             >

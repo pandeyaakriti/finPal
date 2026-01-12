@@ -116,7 +116,7 @@ export default function CsvUploadPage() {
                 className={`relative border-2 border-dashed rounded-xl p-12 transition-all duration-200 ${
                   isDragging
                     ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                    : 'border-gray-300 dark:border-gray-600 hover:border-emerald-400 dark:hover:border-emerald-500'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-[#7ECBAA] dark:hover:border-[#7ECBAA]'
                 }`}
               >
                 <input
@@ -128,7 +128,7 @@ export default function CsvUploadPage() {
 
                 <div className="text-center">
                   <div className="mb-4 flex justify-center">
-                    <div className="w-16 h-16 rounded-full bg-linear-to-r from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
+                    <div className="w-16 h-16 rounded-full bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] flex items-center justify-center shadow-lg">
                       <Upload className="w-8 h-8 text-white" />
                     </div>
                   </div>
@@ -149,7 +149,7 @@ export default function CsvUploadPage() {
               {file && (
                 <div className="mt-6 bg-linear-to-r from-emerald-50 to-teal-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-4 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-[#7ECBAA] flex items-center justify-center">
                       <FileText className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -180,7 +180,7 @@ export default function CsvUploadPage() {
                   }`}
                 >
                   {uploadStatus === 'success' ? (
-                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-[#7ECBAA] dark:text-[#65a187] mt-0.5" />
                   ) : (
                     <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
                   )}
@@ -196,7 +196,7 @@ export default function CsvUploadPage() {
                   className={`w-full py-4 rounded-xl font-semibold text-white transition-all ${
                     !file || uploading
                       ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
-                      : 'bg-linear-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600'
+                      : 'bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] hover:from-[#7B8CA5] hover:to-[#5BB88A] hover:scale-105'
                   }`}
                 >
                   {uploading ? 'Uploading...' : 'Upload CSV File'}
