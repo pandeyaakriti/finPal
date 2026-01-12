@@ -3,6 +3,7 @@ import fs from "fs";
 import csv from "csv-parser";
 import prisma from "../config/db";
 import { upload } from "../middleware/upload";
+import { aiLabelingService } from "../services/aiLabelingService"; // Fixed import
 
 const router = Router();
 
@@ -72,25 +73,48 @@ router.post("/upload-csv", upload.single("file"), async (req, res) => {
               .json({ message: "No valid rows found in CSV" });
           }
 
+          // Save transactions to database
           await prisma.transactions.createMany({
             data: rows,
           });
 
+          console.log(`✅ Uploaded ${rows.length} transactions`);
+
+          // Clean up file
           fs.unlinkSync(req.file!.path);
 
+          // Trigger AI labeling for expenses (async, don't wait)
+          try {
+            console.log("🤖 Starting AI labeling...");
+            // Run in background - don't await to avoid timeout
+            aiLabelingService.labelUserTransactions(1).then(() => {
+              console.log("✅ AI labeling completed");
+            }).catch((error) => {
+              console.error("❌ Auto-labeling failed:", error);
+            });
+          } catch (error) {
+            console.error("❌ Error starting auto-labeling:", error);
+          }
+
+          // Send response immediately
           res.json({
-            message: `Uploaded ${rows.length} transactions successfully`,
+            message: `Uploaded ${rows.length} transactions successfully. AI labeling in progress...`,
+            count: rows.length
           });
+          
         } catch (error) {
+          console.error("Database error:", error);
           fs.unlinkSync(req.file!.path);
           res.status(500).json({ message: "Database error" });
         }
       })
-      .on("error", () => {
+      .on("error", (error) => {
+        console.error("CSV parsing error:", error);
         fs.unlinkSync(req.file!.path);
         res.status(500).json({ message: "CSV parsing error" });
       });
   } catch (error) {
+    console.error("File processing failed:", error);
     if (req.file?.path) fs.unlinkSync(req.file.path);
     res.status(500).json({ message: "File processing failed" });
   }

@@ -11,6 +11,7 @@ import dotenv from "dotenv";
 import csvRoutes from "./routes/csv";
 import predictionRouter from "./routes/predictions";
 import bodyParser from "body-parser";
+import aiLabelingRoutes from './routes/aiLabeling';
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/expenses", expenseRoutes);
 app.use("/incomes", incomeRoutes);
+app.use('/api/ai-labeling', aiLabelingRoutes);
 
 // Health check
 app.get("/health", (req, res) => res.send({ status: "OK" }));

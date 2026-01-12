@@ -47,10 +47,38 @@ model Income {
   @@index([userId])
 }
 model Transactions {
-  id           Int     @id @default(autoincrement())
-  remarks      String?
-  amountPlus   Float
-  amountMinus  Float
-  balance      Float
+  id            Int      @id @default(autoincrement())
+  remarks       String?
+  amountPlus    Float
+  amountMinus   Float
+  balance       Float
+
+  // ============================
+  // AI LABELING FIELDS
+  // ============================
+
+  // AI prediction
+  predicted        Int?
+  predictedLabel   String?
+
+  // User correction (optional)
+  corrected        Int?
+  correctedLabel   String?
+
+  // Confidence score from model
+  confidence       Float?
+
+  createdAt        DateTime @default(now())
 }
 
+// =====================
+// FEEDBACK (optional historical log)
+// =====================
+model Feedback {
+  id          String   @id @default(cuid())
+  text        String
+  predicted   Int
+  corrected   Int
+  confidence  Float
+  createdAt   DateTime @default(now())
+}
