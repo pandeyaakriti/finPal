@@ -1,3 +1,4 @@
+# ai/predict.py 
 import torch
 import json
 import re
@@ -9,7 +10,7 @@ from dotenv import load_dotenv
 # Load .env
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
-MODEL_ID = os.getenv("MODEL_ID", "your-username/finpal-distilbert-v1")  # default if not set
+MODEL_ID = os.getenv("MODEL_ID", "finPal/distilbert")  # hugginfface model repo
 
 # Load label mapping from HuggingFace repo (optional: keep local copy)
 LABEL_MAP_FILE = "label_map.json"
