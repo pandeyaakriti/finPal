@@ -1,41 +1,58 @@
-# ai/predict.py 
 import torch
 import json
 import re
 import os
+import sys
 from transformers import DistilBertTokenizerFast, DistilBertForSequenceClassification
 import torch.nn.functional as F
 from dotenv import load_dotenv
+import warnings
+
+# Suppress all warnings when running in CLI mode
+if len(sys.argv) > 2 and sys.argv[1] == "--predict":
+    warnings.filterwarnings("ignore")
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow logs
+    import logging
+    logging.disable(logging.CRITICAL)
 
 # Load .env
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
-MODEL_ID = os.getenv("MODEL_ID", "finPal/distilbert")  # hugginfface model repo
+MODEL_ID = os.getenv("MODEL_ID", "finPal/distilbert")
 
-# Load label mapping from HuggingFace repo (optional: keep local copy)
+# Load label mapping
 LABEL_MAP_FILE = "label_map.json"
-if os.path.exists(LABEL_MAP_FILE):
+try:
     with open(LABEL_MAP_FILE, "r") as f:
         maps = json.load(f)
-else:
-    # For teammates: try to download from HF repo if private, you may need to include in repo
-    raise FileNotFoundError("label_map.json not found. Please include in repo.")
+except FileNotFoundError:
+    # Try looking in the same directory as the script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    label_map_path = os.path.join(script_dir, LABEL_MAP_FILE)
+    try:
+        with open(label_map_path, "r") as f:
+            maps = json.load(f)
+    except FileNotFoundError:
+        print(json.dumps({"error": "label_map.json not found"}), file=sys.stderr)
+        sys.exit(1)
 
 id2label = {int(k): v for k, v in maps["id2label"].items()}
 label2id = {v: int(k) for k, v in maps["id2label"].items()}
 
-# Load model and tokenizer from HuggingFace (works for teammates without local model)
-print("⏳ Loading model from HuggingFace...")
-tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_ID, use_auth_token=HF_TOKEN)
-model = DistilBertForSequenceClassification.from_pretrained(MODEL_ID, use_auth_token=HF_TOKEN)
-model.eval()
+# Load model and tokenizer
+try:
+    tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_ID, use_auth_token=HF_TOKEN)
+    model = DistilBertForSequenceClassification.from_pretrained(MODEL_ID, use_auth_token=HF_TOKEN)
+    model.eval()
+except Exception as e:
+    if len(sys.argv) > 2 and sys.argv[1] == "--predict":
+        print(json.dumps({"error": f"Failed to load model: {str(e)}"}), file=sys.stderr)
+        sys.exit(1)
+    else:
+        raise
 
-# Use GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
-
-print(f"✅ Model loaded on: {device}")
-print(f"Available categories: {list(id2label.values())}\n")
 
 
 def preprocess_text(text):
@@ -56,64 +73,86 @@ def predict(text, top_k=3):
     Returns:
         dict with primary prediction and top-k predictions
     """
-    text = preprocess_text(text)
+    try:
+        text = preprocess_text(text)
 
-    # Tokenize
-    inputs = tokenizer(
-        text, 
-        return_tensors="pt", 
-        truncation=True, 
-        padding="max_length", 
-        max_length=128
-    )
+        # Tokenize
+        inputs = tokenizer(
+            text, 
+            return_tensors="pt", 
+            truncation=True, 
+            padding="max_length", 
+            max_length=128
+        )
 
-    inputs = {k: v.to(device) for k, v in inputs.items()}
+        inputs = {k: v.to(device) for k, v in inputs.items()}
 
-    # Predict
-    with torch.no_grad():
-        logits = model(**inputs).logits
+        # Predict
+        with torch.no_grad():
+            logits = model(**inputs).logits
 
-    probs = F.softmax(logits, dim=-1)[0]
-    top_probs, top_indices = torch.topk(probs, min(top_k, len(id2label)))
+        probs = F.softmax(logits, dim=-1)[0]
+        top_probs, top_indices = torch.topk(probs, min(top_k, len(id2label)))
 
-    pred_id = top_indices[0].item()
-    confidence = top_probs[0].item()
+        pred_id = top_indices[0].item()
+        confidence = top_probs[0].item()
 
-    top_predictions = [
-        {
-            "category": id2label[idx.item()],
-            "confidence": float(prob.item())
+        top_predictions = [
+            {
+                "category": id2label[idx.item()],
+                "confidence": float(prob.item())
+            }
+            for prob, idx in zip(top_probs, top_indices)
+        ]
+
+        if confidence >= 0.7:
+            confidence_level = "high"
+        elif confidence >= 0.4:
+            confidence_level = "medium"
+        else:
+            confidence_level = "low"
+
+        return {
+            "text": text,
+            "category": id2label[pred_id],
+            "confidence": float(confidence),
+            "confidence_level": confidence_level,
+            "top_predictions": top_predictions
         }
-        for prob, idx in zip(top_probs, top_indices)
-    ]
-
-    if confidence >= 0.7:
-        confidence_level = "high"
-    elif confidence >= 0.4:
-        confidence_level = "medium"
-    else:
-        confidence_level = "low"
-
-    return {
-        "text": text,
-        "category": id2label[pred_id],
-        "confidence": float(confidence),
-        "confidence_level": confidence_level,
-        "top_predictions": top_predictions
-    }
-
-
-def predict_batch(texts):
-    """Predict categories for multiple texts"""
-    results = []
-    for text in texts:
-        results.append(predict(text))
-    return results
+    except Exception as e:
+        return {
+            "error": str(e),
+            "text": text
+        }
 
 
 if __name__ == "__main__":
+    # Check if running in CLI mode (called from Node.js)
+    if len(sys.argv) > 2 and sys.argv[1] == "--predict":
+        # CLI mode: predict single transaction
+        try:
+            text = sys.argv[2]
+            result = predict(text)
+            
+            # Check for errors in result
+            if "error" in result:
+                print(json.dumps(result), file=sys.stderr)
+                sys.exit(1)
+            
+            # Output ONLY JSON for Node.js to parse
+            print(json.dumps(result))
+            sys.exit(0)
+        except Exception as e:
+            error_result = {
+                "error": str(e),
+                "type": type(e).__name__
+            }
+            print(json.dumps(error_result), file=sys.stderr)
+            sys.exit(1)
+    
+    # Interactive mode (original behavior)
     print("="*60)
-    print("TRANSACTION CATEGORY PREDICTOR (TEAM-FRIENDLY)")
+    print("TRANSACTION CATEGORY PREDICTOR")
     print("="*60)
 
     # Test examples
@@ -128,6 +167,10 @@ if __name__ == "__main__":
     print("\n📊 Testing with sample transactions:\n")
     for example in test_examples:
         result = predict(example)
+        if "error" in result:
+            print(f"❌ Error: {result['error']}")
+            continue
+            
         print(f"Text: {result['text']}")
         print(f"  → Category: {result['category']}")
         print(f"  → Confidence: {result['confidence']:.2%} ({result['confidence_level']})")
@@ -152,6 +195,11 @@ if __name__ == "__main__":
                 continue
 
             result = predict(user_input)
+            
+            if "error" in result:
+                print(f"\n❌ Error: {result['error']}\n")
+                continue
+                
             print(f"\n✓ Category: {result['category']}")
             print(f"  Confidence: {result['confidence']:.2%} ({result['confidence_level']})")
 

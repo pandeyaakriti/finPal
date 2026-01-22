@@ -1,3 +1,4 @@
+# ai/upload_model.py
 from huggingface_hub import upload_folder
 
 repo_id = "finPal/distilbert"
