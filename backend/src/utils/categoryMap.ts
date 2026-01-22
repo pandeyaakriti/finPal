@@ -1,3 +1,4 @@
+// backend/src/utils/categoryMap.ts
 export const categories = [
   "education",
   "entertainment",

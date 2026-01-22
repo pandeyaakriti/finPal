@@ -53,10 +53,7 @@ model Transactions {
   amountMinus   Float
   balance       Float
 
-  // ============================
   // AI LABELING FIELDS
-  // ============================
-
   // AI prediction
   predicted        Int?
   predictedLabel   String?
@@ -71,9 +68,7 @@ model Transactions {
   createdAt        DateTime @default(now())
 }
 
-// =====================
 // FEEDBACK (optional historical log)
-// =====================
 model Feedback {
   id          String   @id @default(cuid())
   text        String

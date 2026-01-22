@@ -35,8 +35,9 @@ app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/expenses", expenseRoutes);
 app.use("/incomes", incomeRoutes);
-app.use('/api/ai-labeling', aiLabelingRoutes);
-
+app.use("/api/ai-labeling", aiLabelingRoutes);
+app.use("/uploads", express.static('uploads'));
+app.use("/api/transactions", require("./routes/transactions").default);
 // Health check
 app.get("/health", (req, res) => res.send({ status: "OK" }));
 
