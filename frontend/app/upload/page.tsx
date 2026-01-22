@@ -196,7 +196,7 @@ export default function CsvUploadPage() {
                   className={`w-full py-4 rounded-xl font-semibold text-white transition-all ${
                     !file || uploading
                       ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
-                      : 'bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] hover:from-[#7B8CA5] hover:to-[#5BB88A] hover:scale-105'
+                      : 'bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] hover:from-[#7B8CA5] hover:to-[#5BB88A] '
                   }`}
                 >
                   {uploading ? 'Uploading...' : 'Upload CSV File'}

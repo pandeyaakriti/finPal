@@ -1,48 +1,89 @@
 //frontend/app/charts/page.tsx
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { TrendingUp, TrendingDown, Calendar, DollarSign, Activity } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 
 // Sample data for charts
-const categoryData = [
-  { name: 'Food & Dining', value: 3500, color: '#7AD1A6' },
-  { name: 'Transportation', value: 2800, color: '#90A1B9' },
-  { name: 'Shopping', value: 2200, color: '#5B6F70' },
-  { name: 'Entertainment', value: 1500, color: '#A8C5DD' },
-  { name: 'Bills & Utilities', value: 2000, color: '#6B8E9F' },
-  { name: 'Healthcare', value: 1200, color: '#8BBDAB' },
-  { name: 'Others', value: 800, color: '#B0BEC5' },
-];
+// const categoryData = [
+//   { name: 'Food & Dining', value: 3500, color: '#7AD1A6' },
+//   { name: 'Transportation', value: 2800, color: '#90A1B9' },
+//   { name: 'Shopping', value: 2200, color: '#5B6F70' },
+//   { name: 'Entertainment', value: 1500, color: '#A8C5DD' },
+//   { name: 'Bills & Utilities', value: 2000, color: '#6B8E9F' },
+//   { name: 'Healthcare', value: 1200, color: '#8BBDAB' },
+//   { name: 'Others', value: 800, color: '#B0BEC5' },
+// ];
 
-const monthlyData = [
-  { month: 'Jan', expenses: 12500, income: 18000 },
-  { month: 'Feb', expenses: 13200, income: 18000 },
-  { month: 'Mar', expenses: 11800, income: 18500 },
-  { month: 'Apr', expenses: 14000, income: 18000 },
-  { month: 'May', expenses: 13500, income: 19000 },
-  { month: 'Jun', expenses: 14000, income: 18000 },
-];
+// const monthlyData = [
+//   { month: 'Jan', expenses: 12500, income: 18000 },
+//   { month: 'Feb', expenses: 13200, income: 18000 },
+//   { month: 'Mar', expenses: 11800, income: 18500 },
+//   { month: 'Apr', expenses: 14000, income: 18000 },
+//   { month: 'May', expenses: 13500, income: 19000 },
+//   { month: 'Jun', expenses: 14000, income: 18000 },
+// ];
 
-const trendData = [
-  { month: 'Jan', amount: 12500 },
-  { month: 'Feb', amount: 13200 },
-  { month: 'Mar', amount: 11800 },
-  { month: 'Apr', amount: 14000 },
-  { month: 'May', amount: 13500 },
-  { month: 'Jun', amount: 14000 },
-];
+// const trendData = [
+//   { month: 'Jan', amount: 12500 },
+//   { month: 'Feb', amount: 13200 },
+//   { month: 'Mar', amount: 11800 },
+//   { month: 'Apr', amount: 14000 },
+//   { month: 'May', amount: 13500 },
+//   { month: 'Jun', amount: 14000 },
+// ];
+
 
 export default function Charts() {
+  const [categoryData, setCategoryData] = useState<any[]>([]);
+const [monthlyData, setMonthlyData] = useState<any[]>([]);
+const [trendData, setTrendData] = useState<any[]>([]);
+ useEffect(() => {
+    fetch("http://localhost:5000/api/transactions", {
+      headers: {
+        Authorization: "Bearer " + localStorage.getItem("token")
+      }
+    })
+      .then(res => res.json())
+      .then(rows => {
+        const byCategory: any = {};
+        const byMonth: any = {};
+
+        rows.forEach((r: any) => {
+          const cat = r.predictedLabel || "unknown";
+          byCategory[cat] = (byCategory[cat] || 0) + r.amountMinus;
+
+          const month = new Date(r.createdAt).toLocaleString("en", { month: "short" });
+          byMonth[month] = (byMonth[month] || 0) + r.amountMinus;
+        });
+
+        setCategoryData(
+          Object.entries(byCategory).map(([name, value]) => ({ name, value }))
+        );
+
+        setMonthlyData(
+          Object.entries(byMonth).map(([month, expenses]) => ({ month, expenses }))
+        );
+      });
+  }, []);
   const [timeRange, setTimeRange] = useState('6M');
-  
   const totalExpenses = categoryData.reduce((sum, item) => sum + item.value, 0);
   const avgMonthly = monthlyData.reduce((sum, item) => sum + item.expenses, 0) / monthlyData.length;
+  // const lastMonth = monthlyData[monthlyData.length - 1];
+  // const prevMonth = monthlyData[monthlyData.length - 2];
+  // const monthChange = ((lastMonth.expenses - prevMonth.expenses) / prevMonth.expenses) * 100;
+let monthChange = 0;
+
+if (monthlyData.length >= 2) {
   const lastMonth = monthlyData[monthlyData.length - 1];
   const prevMonth = monthlyData[monthlyData.length - 2];
-  const monthChange = ((lastMonth.expenses - prevMonth.expenses) / prevMonth.expenses) * 100;
 
+  if (prevMonth.expenses !== 0) {
+    monthChange =
+      ((lastMonth.expenses - prevMonth.expenses) / prevMonth.expenses) * 100;
+  }
+}
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (

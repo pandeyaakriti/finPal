@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "finPal",
+  title: "finPal: AI powered Financial Intelligence",
   description: "agentic financial assistant",
   icons: [
     {url: "/logo.png", type:"image/png"
@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <Script
           src="https://accounts.google.com/gsi/client"
@@ -38,7 +38,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning
       >
         {children}
       </body>
