@@ -21,6 +21,7 @@ model User {
   // Relations
   expenses  Expense[]
   incomes   Income[]
+  transactions Transactions[]
 }
 
 model Expense {
@@ -47,26 +48,33 @@ model Income {
   @@index([userId])
 }
 model Transactions {
-  id            Int      @id @default(autoincrement())
-  remarks       String?
-  amountPlus    Float
-  amountMinus   Float
-  balance       Float
+  id              Int      @id @default(autoincrement())
 
-  // AI LABELING FIELDS
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           Int      @default(1)
+
+  remarks          String?
+  amountPlus       Float    @default(0)
+  amountMinus      Float    @default(0)
+  balance          Float
+
   // AI prediction
   predicted        Int?
   predictedLabel   String?
 
-  // User correction (optional)
+  // User correction
   corrected        Int?
   correctedLabel   String?
 
-  // Confidence score from model
   confidence       Float?
 
+  source           String   @default("AI") // AI | MANUAL
+
   createdAt        DateTime @default(now())
+
+  @@index([userId])
 }
+
 
 // FEEDBACK (optional historical log)
 model Feedback {

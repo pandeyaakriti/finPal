@@ -1,18 +1,31 @@
-import { Router } from "express";
+import { Router, Request } from "express";
 import fs from "fs";
 import csv from "csv-parser";
 import prisma from "../config/db";
 import { upload } from "../middleware/upload";
 import { aiLabelingService } from "../services/aiLabelingService"; // Fixed import
 
+declare global {
+  namespace Express {
+    interface Request {
+      user?: { id: number };
+    }
+  }
+}
+
 const router = Router();
+
+
 
 router.post("/upload-csv", upload.single("file"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "CSV file required" });
   }
+  const userId = (req as any).user?.id ?? 1;
+
 
   const rows: {
+    userId: number;
     remarks: string | null;
     amountPlus: number;
     amountMinus: number;
@@ -58,6 +71,7 @@ router.post("/upload-csv", upload.single("file"), async (req, res) => {
         if (isNaN(balance)) return;
 
         rows.push({
+          userId,
           remarks: row["Remarks"]?.trim() || null,
           amountPlus: isNaN(amountPlus) ? 0 : amountPlus,
           amountMinus: isNaN(amountMinus) ? 0 : amountMinus,
@@ -87,7 +101,7 @@ router.post("/upload-csv", upload.single("file"), async (req, res) => {
           try {
             console.log("🤖 Starting AI labeling...");
             // Run in background - don't await to avoid timeout
-            aiLabelingService.labelUserTransactions(1).then(() => {
+            aiLabelingService.labelUserTransactions(userId).then(() => {
               console.log("✅ AI labeling completed");
             }).catch((error) => {
               console.error("❌ Auto-labeling failed:", error);
