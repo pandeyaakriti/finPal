@@ -1,10 +1,9 @@
-// backend/src/routes/csv.ts
 import { Router } from "express";
 import fs from "fs";
 import csv from "csv-parser";
 import prisma from "../config/db";
 import { upload } from "../middleware/upload";
-import { aiLabelingService } from "../services/aiLabelingService";
+import { aiLabelingService } from "../services/aiLabelingService"; // Fixed import
 
 const router = Router();
 
@@ -85,16 +84,17 @@ router.post("/upload-csv", upload.single("file"), async (req, res) => {
           fs.unlinkSync(req.file!.path);
 
           // Trigger AI labeling for expenses (async, don't wait)
-          console.log("🤖 Starting AI labeling...");
-          
-          // Run in background - don't await to avoid timeout
-          aiLabelingService.labelUserTransactions()
-            .then(() => {
-              console.log("✅ AI labeling completed successfully");
-            })
-            .catch((error) => {
+          try {
+            console.log("🤖 Starting AI labeling...");
+            // Run in background - don't await to avoid timeout
+            aiLabelingService.labelUserTransactions(1).then(() => {
+              console.log("✅ AI labeling completed");
+            }).catch((error) => {
               console.error("❌ Auto-labeling failed:", error);
             });
+          } catch (error) {
+            console.error("❌ Error starting auto-labeling:", error);
+          }
 
           // Send response immediately
           res.json({
@@ -117,83 +117,6 @@ router.post("/upload-csv", upload.single("file"), async (req, res) => {
     console.error("File processing failed:", error);
     if (req.file?.path) fs.unlinkSync(req.file.path);
     res.status(500).json({ message: "File processing failed" });
-  }
-});
-
-// New endpoint to check labeling status
-router.get("/labeling-stats", async (req, res) => {
-  try {
-    const stats = await aiLabelingService.getStats();
-    res.json(stats);
-  } catch (error) {
-    console.error("Error fetching stats:", error);
-    res.status(500).json({ message: "Error fetching labeling stats" });
-  }
-});
-
-// Test Python connection
-router.get("/test-python", async (req, res) => {
-  try {
-    const isWorking = await aiLabelingService.testPythonConnection();
-    res.json({ 
-      success: isWorking,
-      message: isWorking 
-        ? "Python integration is working correctly!" 
-        : "Python integration failed. Check server logs."
-    });
-  } catch (error) {
-    console.error("Python test error:", error);
-    res.status(500).json({ 
-      success: false,
-      message: "Python test failed",
-      error: error instanceof Error ? error.message : String(error)
-    });
-  }
-});
-
-// Debug: Test prediction on a specific remark
-router.post("/debug-predict", async (req, res) => {
-  try {
-    const { remark } = req.body;
-    
-    if (!remark) {
-      return res.status(400).json({ error: "remark is required" });
-    }
-
-    console.log(`\n🔍 Debug prediction for: "${remark}"`);
-    
-    // Get prediction using the service (this will show detailed logs)
-    const aiLabelingService = (await import("../services/aiLabelingService")).aiLabelingService;
-    const prediction = await (aiLabelingService as any).getPrediction(remark);
-    
-    res.json({
-      remark,
-      prediction,
-      success: true
-    });
-  } catch (error) {
-    console.error("Debug prediction error:", error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    });
-  }
-});
-
-// Manually trigger labeling for all unlabeled transactions
-router.post("/label-transactions", async (req, res) => {
-  try {
-    // Don't await - run in background
-    aiLabelingService.labelUserTransactions()
-      .then(() => console.log("✅ Manual labeling completed"))
-      .catch(err => console.error("❌ Manual labeling failed:", err));
-    
-    res.json({ 
-      message: "Labeling started in background. Check /labeling-stats for progress." 
-    });
-  } catch (error) {
-    console.error("Error starting labeling:", error);
-    res.status(500).json({ message: "Error starting labeling process" });
   }
 });
 

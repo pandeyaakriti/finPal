@@ -6,6 +6,8 @@ from huggingface_hub import login
 import os
 import uvicorn
 from dotenv import load_dotenv
+import torch
+import torch.nn.functional as F
 
 load_dotenv()
 
@@ -13,8 +15,17 @@ load_dotenv()
 login(os.getenv("HF_TOKEN"))
 MODEL_ID = os.getenv("MODEL_ID")
 
-tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_ID, use_auth_token=True)
-model = DistilBertForSequenceClassification.from_pretrained(MODEL_ID, use_auth_token=True)
+tokenizer = DistilBertTokenizerFast.from_pretrained(
+    MODEL_ID,
+    token=os.getenv("HF_TOKEN")
+)
+
+model = DistilBertForSequenceClassification.from_pretrained(
+    MODEL_ID,
+    token=os.getenv("HF_TOKEN")
+)
+
+model.eval()
 
 # FastAPI app
 app = FastAPI()
@@ -25,9 +36,17 @@ class TextRequest(BaseModel):
 @app.post("/predict")
 def predict(req: TextRequest):
     inputs = tokenizer(req.text, return_tensors="pt", truncation=True, padding=True)
-    outputs = model(**inputs)
-    prediction = int(outputs.logits.argmax(-1))
-    return {"prediction": prediction}
+    with torch.no_grad():
+        outputs = model(**inputs)
+        probs = F.softmax(outputs.logits, dim=-1)
 
+    label = int(probs.argmax(dim=-1))
+    confidence = float(probs.max())
+
+    return {
+    "prediction": label,
+    "label": label,
+    "confidence": confidence
+}
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)
