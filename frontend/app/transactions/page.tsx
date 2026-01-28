@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getJSON } from "@/lib/api";
 import TransactionRow from "@/components/TransactionRow";
 import ManualTransactionForm from "@/components/ManualTransactionForm";
+import Sidebar from '@/components/Sidebar';
 
 type Transaction = {
   id: number;
@@ -22,7 +23,7 @@ type Transaction = {
 };
 
 type SortBy = "date" | "confidence";
-type FilterType = "all" | "income" | "expense" | "low-confidence";
+type FilterType = "all" | "income" | "expense";
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -50,9 +51,6 @@ export default function TransactionsPage() {
   const filteredTransactions = transactions.filter((tx) => {
     if (filterType === "income") return tx.amountPlus > 0;
     if (filterType === "expense") return tx.amountMinus > 0;
-    if (filterType === "low-confidence") {
-      return tx.amountMinus > 0 && tx.confidence !== null && tx.confidence < 0.6;
-    }
     return true;
   });
 
@@ -74,9 +72,22 @@ export default function TransactionsPage() {
   const netBalance = totalIncome - totalExpense;
 
   return (
-    <div className="min-h-screen bg-zinc-950">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-semibold text-zinc-100 mb-6">Transactions</h1>
+   <div className="min-h-screen flex bg-linear-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+       <Sidebar/>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+       
+        
+        {/* Header */}
+        <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-6 py-4.5 flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              Transactions
+            </h1>
+            </div>
+            </header>
+        
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -136,16 +147,7 @@ export default function TransactionsPage() {
                 >
                   Expense
                 </button>
-                <button
-                  onClick={() => setFilterType("low-confidence")}
-                  className={`px-3 py-1.5 text-xs rounded transition-colors ${
-                    filterType === "low-confidence"
-                      ? "bg-emerald-600 text-white"
-                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-                  }`}
-                >
-                  Low Confidence
-                </button>
+                
               </div>
             </div>
 
@@ -203,5 +205,6 @@ export default function TransactionsPage() {
         </div>
       </div>
     </div>
+
   );
 }
