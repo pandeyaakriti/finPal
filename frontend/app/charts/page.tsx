@@ -40,7 +40,7 @@ export default function Charts() {
 const [monthlyData, setMonthlyData] = useState<any[]>([]);
 const [trendData, setTrendData] = useState<any[]>([]);
  useEffect(() => {
-    fetch("http://localhost:5000/api/transactions", {
+    fetch("http://localhost:5000/api/charts", {
       headers: {
         Authorization: "Bearer " + localStorage.getItem("token")
       }

@@ -38,6 +38,7 @@ app.use("/users", userRoutes);
 app.use("/expenses", expenseRoutes);
 app.use("/incomes", incomeRoutes);
 app.use("/transactions", transactions);
+app.use("/api/charts", require("./routes/charts").default);
 app.use("/api/ai-labeling", aiLabelingRoutes);
 app.use("/uploads", express.static('uploads'));
 //app.use("/api/transactions", require("./routes/transactions").default);
