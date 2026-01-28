@@ -12,6 +12,8 @@ import csvRoutes from "./routes/csv";
 import predictionRouter from "./routes/predictions";
 import bodyParser from "body-parser";
 import aiLabelingRoutes from './routes/aiLabeling';
+import transactions from "./routes/transactions";
+import router from "./routes/feedback";
 
 dotenv.config();
 
@@ -35,9 +37,10 @@ app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/expenses", expenseRoutes);
 app.use("/incomes", incomeRoutes);
+app.use("/transactions", transactions);
 app.use("/api/ai-labeling", aiLabelingRoutes);
 app.use("/uploads", express.static('uploads'));
-app.use("/api/transactions", require("./routes/transactions").default);
+//app.use("/api/transactions", require("./routes/transactions").default);
 // Health check
 app.get("/health", (req, res) => res.send({ status: "OK" }));
 
