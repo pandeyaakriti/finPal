@@ -17,13 +17,13 @@ model User {
   googleId  String?   @unique
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  usedForTraining Boolean @default(false)
+
   
   // Relations
   expenses  Expense[]
   incomes   Income[]
   transactions Transactions[]
-  @@index([usedForTraining])
+  
 }
 
 model Expense {
@@ -74,7 +74,10 @@ model Transactions {
 
   createdAt        DateTime @default(now())
 
+  usedForTraining Boolean @default(false)
+
   @@index([userId])
+  @@index([usedForTraining])
 }
 
 
