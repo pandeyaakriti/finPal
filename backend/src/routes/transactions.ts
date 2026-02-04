@@ -9,7 +9,11 @@ const router = Router();
  */
 router.get("/", authMiddleware, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = (req as any).userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
     const transactions = await prisma.transactions.findMany({
       where: {
@@ -32,7 +36,12 @@ router.get("/", authMiddleware, async (req, res) => {
  */
 router.post("/manual", authMiddleware, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = (req as any).userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const { amount, type, categoryLabel, remarks } = req.body;
 
     // Validation
@@ -77,7 +86,12 @@ router.post("/manual", authMiddleware, async (req, res) => {
  */
 router.patch("/:id/correct", authMiddleware, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = (req as any).userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const transactionId = Number(req.params.id);
     const { correctedLabel } = req.body;
 
@@ -132,7 +146,12 @@ router.patch("/:id/correct", authMiddleware, async (req, res) => {
  */
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = (req as any).userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const transactionId = Number(req.params.id);
 
     const transaction = await prisma.transactions.findFirst({
