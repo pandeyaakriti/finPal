@@ -17,11 +17,13 @@ model User {
   googleId  String?   @unique
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  usedForTraining Boolean @default(false)
   
   // Relations
   expenses  Expense[]
   incomes   Income[]
   transactions Transactions[]
+  @@index([usedForTraining])
 }
 
 model Expense {
@@ -76,12 +78,19 @@ model Transactions {
 }
 
 
-// FEEDBACK (optional historical log)
-model Feedback {
-  id          String   @id @default(cuid())
-  text        String
-  predicted   Int
-  corrected   Int
-  confidence  Float
-  createdAt   DateTime @default(now())
+model RetrainingJob {
+  id                  String   @id @default(cuid())
+  status              String   @default("pending")
+  totalCorrections    Int
+  trainSamples        Int?
+  valSamples          Int?
+  bestValAccuracy     Float?
+  epochs              Int      @default(8)
+  learningRate        Float    @default(0.00002)
+  errorMessage        String?
+  startedAt           DateTime?
+  completedAt         DateTime?
+  createdAt           DateTime @default(now())
+  
+  @@index([status])
 }
