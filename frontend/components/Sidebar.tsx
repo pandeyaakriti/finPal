@@ -18,14 +18,14 @@ export default function Sidebar({ headerTitle }: { headerTitle?: string }) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 min-h-screen bg-[#16202A] text-white flex flex-col">
+    <aside className="w-64 h-screen bg-[#16202A] text-white flex flex-col sticky top-0 left-0">
       {/* Header */}
-      <div className="px-6 py-5.5 text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] border-b border-white/10">
+      <div className="px-6 py-5.5 text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] border-b border-white/10 shrink-0">
         finPal
       </div>
 
       {/* Menu */}
-      <nav className="flex-1 px-4 py-6 space-y-2">
+      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
         {menuItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
 
