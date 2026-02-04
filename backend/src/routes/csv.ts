@@ -3,12 +3,13 @@ import fs from "fs";
 import csv from "csv-parser";
 import prisma from "../config/db";
 import { upload } from "../middleware/upload";
+import { authMiddleware } from "../middleware/auth";
 import { aiLabelingService } from "../services/aiLabelingService"; // Fixed import
 
 declare global {
   namespace Express {
     interface Request {
-      user?: { id: number };
+      userId?: number;
     }
   }
 }
@@ -17,11 +18,15 @@ const router = Router();
 
 
 
-router.post("/upload-csv", upload.single("file"), async (req, res) => {
+router.post("/upload-csv", authMiddleware, upload.single("file"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "CSV file required" });
   }
-  const userId = (req as any).user?.id ?? 1;
+  const userId = (req as any).userId;
+  
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized - User not authenticated" });
+  }
 
 
   const rows: {

@@ -54,9 +54,22 @@ export default function CsvUploadPage() {
       const formData = new FormData();
       formData.append('file', file);
 
+      // Get token from localStorage
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setUploadStatus('error');
+        setMessage('You must be logged in to upload files');
+        setUploading(false);
+        return;
+      }
+
       const res = await fetch('http://localhost:5000/api/upload-csv', {
-      method: 'POST',
-      body: formData,
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
       });
 
       const data = await res.json();
