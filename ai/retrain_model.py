@@ -1,102 +1,84 @@
 """
-retrain_model.py
+retrain_corrections_only.py
 
-Retrain the DistilBERT model with user corrections
-This script fetches corrections from the database and fine-tunes the model
+Train the model ONLY with user corrections (no original training data).
+This script:
+1. Fetches ONLY the 100+ corrections from database
+2. Trains from scratch or continues from existing model
+3. Does NOT combine with original training data
+4. Updates job status in the database
 """
 
 import os
+import sys
 import json
+import argparse
 import requests
 import pandas as pd
+import numpy as np
 import torch
-from torch.utils.data import Dataset, DataLoader
+import re
+from datasets import Dataset, DatasetDict
+from sklearn.model_selection import train_test_split
 from transformers import (
     DistilBertTokenizerFast,
     DistilBertForSequenceClassification,
-    AdamW,
-    get_linear_schedule_with_warmup
+    Trainer,
+    TrainingArguments,
+    EarlyStoppingCallback
 )
-from sklearn.model_selection import train_test_split
-from tqdm import tqdm
+from torch.nn import CrossEntropyLoss
+from sklearn.metrics import accuracy_score, f1_score, classification_report
 from dotenv import load_dotenv
 from datetime import datetime
 
 load_dotenv()
 
 # Configuration
-HF_TOKEN = os.getenv("HF_TOKEN")
-MODEL_ID = os.getenv("MODEL_ID", "finPal/distilbert")
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:3000")
+EXISTING_MODEL_PATH = "./model"  # Your already trained model
 OUTPUT_DIR = "./model/retrained"
-BATCH_SIZE = 16
+
+# Training parameters
+BATCH_SIZE = 4
+GRADIENT_ACCUMULATION_STEPS = 8
 LEARNING_RATE = 2e-5
-EPOCHS = 3
-
-# Label mapping
-LABEL_MAP = {
-    0: 'education',
-    1: 'entertainment',
-    2: 'food & dining',
-    3: 'healthcare',
-    4: 'insurance',
-    5: 'miscellaneous',
-    6: 'rent',
-    7: 'savings/investments',
-    8: 'shopping',
-    9: 'subscriptions',
-    10: 'tax',
-    11: 'transfers',
-    12: 'transportation',
-    13: 'utilities'
-}
-
-class TransactionDataset(Dataset):
-    def __init__(self, texts, labels, tokenizer, max_length=128):
-        self.texts = texts
-        self.labels = labels
-        self.tokenizer = tokenizer
-        self.max_length = max_length
-
-    def __len__(self):
-        return len(self.texts)
-
-    def __getitem__(self, idx):
-        text = str(self.texts[idx])
-        label = self.labels[idx]
-
-        encoding = self.tokenizer(
-            text,
-            add_special_tokens=True,
-            max_length=self.max_length,
-            padding='max_length',
-            truncation=True,
-            return_tensors='pt'
-        )
-
-        return {
-            'input_ids': encoding['input_ids'].flatten(),
-            'attention_mask': encoding['attention_mask'].flatten(),
-            'labels': torch.tensor(label, dtype=torch.long)
-        }
+EPOCHS = 8
+MAX_LENGTH = 96
 
 
-def fetch_corrections_from_api():
-    """Fetch corrections from backend API"""
+def update_job_status(job_id, status, data=None):
+    """Update job status via API"""
     try:
-        print("📥 Fetching corrections from backend...")
-        response = requests.get(f"{BACKEND_URL}/api/ai-labeling/export-corrections")
+        payload = {"status": status, **(data or {})}
+        response = requests.put(
+            f"{BACKEND_URL}/api/retraining/jobs/{job_id}",
+            json=payload,
+            timeout=10
+        )
+        if response.status_code == 200:
+            print(f"✅ Job status updated: {status}")
+        else:
+            print(f"⚠️ Failed to update job status: {response.status_code}")
+    except Exception as e:
+        print(f"⚠️ Error updating job status: {e}")
+
+
+def fetch_corrections():
+    """Fetch ONLY corrections from database (no original data)"""
+    try:
+        print("📥 Fetching corrections from database...")
+        response = requests.get(
+            f"{BACKEND_URL}/api/retraining/export-corrections",
+            timeout=30
+        )
         
         if response.status_code == 200:
-            # Save CSV temporarily
-            with open("corrections_temp.csv", "w") as f:
-                f.write(response.text)
-            
-            df = pd.read_csv("corrections_temp.csv")
-            os.remove("corrections_temp.csv")
-            
-            print(f"✅ Fetched {len(df)} corrections")
-            return df
+            # Parse CSV response
+            from io import StringIO
+            corrections_df = pd.read_csv(StringIO(response.text))
+            print(f"✅ Fetched {len(corrections_df)} corrections")
+            return corrections_df
         else:
             print(f"❌ Failed to fetch corrections: {response.status_code}")
             return None
@@ -105,261 +87,342 @@ def fetch_corrections_from_api():
         return None
 
 
-def load_original_training_data():
-    """Load original training data if available"""
-    try:
-        if os.path.exists("./data/training_data.csv"):
-            print("📥 Loading original training data...")
-            df = pd.read_csv("./data/training_data.csv")
-            print(f"✅ Loaded {len(df)} original training samples")
-            return df
-        else:
-            print("⚠️  No original training data found, using only corrections")
-            return None
-    except Exception as e:
-        print(f"❌ Error loading original data: {e}")
-        return None
+def preprocess_text(text):
+    """Preprocess text (same as train.py)"""
+    text = str(text).strip()
+    text = re.sub(r'\s+', ' ', text)
+    return text
 
 
-def prepare_data():
-    """Prepare training data by combining original + corrections"""
+def prepare_training_data():
+    """Prepare training data from ONLY corrections"""
     
-    # Fetch user corrections
-    corrections_df = fetch_corrections_from_api()
+    # Fetch corrections
+    corrections_df = fetch_corrections()
     
     if corrections_df is None or len(corrections_df) == 0:
-        print("❌ No corrections available for retraining")
-        return None, None
+        print("❌ No corrections available")
+        return None, None, None
     
-    # Load original training data
-    original_df = load_original_training_data()
+    # Preprocess
+    corrections_df["text"] = corrections_df["text"].apply(preprocess_text)
+    corrections_df["label"] = corrections_df["label"].astype(str).str.strip().str.lower()
     
-    # Combine datasets
-    if original_df is not None:
-        # Ensure column names match
-        corrections_df.columns = ['text', 'label']
-        original_df.columns = ['text', 'label']
+    # Remove empty
+    corrections_df = corrections_df[
+        (corrections_df["text"].str.len() > 0) & 
+        (corrections_df["label"].notna())
+    ]
+    
+    print(f"\n📊 Training with ONLY corrections: {len(corrections_df)} samples")
+    print(f"\n📊 Label distribution:\n{corrections_df['label'].value_counts()}")
+    
+    # Create label mapping
+    labels = sorted(corrections_df["label"].unique().tolist())
+    label2id = {l: i for i, l in enumerate(labels)}
+    id2label = {i: l for l, i in label2id.items()}
+    
+    corrections_df["label_id"] = corrections_df["label"].map(label2id)
+    
+    # Check if we have enough samples
+    if len(corrections_df) < 50:
+        print(f"⚠️ Warning: Only {len(corrections_df)} samples. Consider collecting more.")
+    
+    # Stratified split
+    try:
+        train_df, test_df = train_test_split(
+            corrections_df[["text", "label_id"]], 
+            test_size=0.2, 
+            random_state=42,
+            stratify=corrections_df["label_id"]
+        )
+    except ValueError:
+        # If stratification fails (too few samples per class), do random split
+        print("⚠️ Not enough samples for stratified split, using random split")
+        train_df, test_df = train_test_split(
+            corrections_df[["text", "label_id"]], 
+            test_size=0.2, 
+            random_state=42
+        )
+    
+    print(f"📊 Train: {len(train_df)} | Test: {len(test_df)}")
+    
+    return train_df, test_df, {"label2id": label2id, "id2label": id2label}
+
+
+class WeightedTrainer(Trainer):
+    """Custom trainer with class weighting"""
+    def __init__(self, *args, class_weights=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.class_weights = class_weights
+    
+    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+        labels = inputs.get("labels")
+        if labels is None:
+            labels = inputs.pop("label_ids", None)
+        else:
+            labels = inputs.pop("labels")
+            
+        outputs = model(**inputs)
+        logits = outputs.logits
         
-        combined_df = pd.concat([original_df, corrections_df], ignore_index=True)
-        print(f"📊 Combined dataset: {len(original_df)} original + {len(corrections_df)} corrections = {len(combined_df)} total")
-    else:
-        combined_df = corrections_df
-        print(f"📊 Using {len(combined_df)} corrections only")
-    
-    # Split data
-    train_df, val_df = train_test_split(combined_df, test_size=0.15, random_state=42, stratify=combined_df['label'])
-    
-    print(f"📊 Train set: {len(train_df)} samples")
-    print(f"📊 Validation set: {len(val_df)} samples")
-    
-    return train_df, val_df
+        if self.class_weights is not None:
+            loss_fct = CrossEntropyLoss(weight=self.class_weights.to(logits.device))
+        else:
+            loss_fct = CrossEntropyLoss()
+        
+        loss = loss_fct(logits, labels)
+        
+        return (loss, outputs) if return_outputs else loss
 
 
-def train_model(train_df, val_df):
-    """Fine-tune the model with new data"""
+def compute_metrics(eval_pred):
+    """Metrics computation"""
+    logits, labels = eval_pred
+    predictions = np.argmax(logits, axis=-1)
+    
+    acc = accuracy_score(labels, predictions)
+    f1_macro = f1_score(labels, predictions, average='macro', zero_division=0)
+    f1_weighted = f1_score(labels, predictions, average='weighted', zero_division=0)
+    
+    return {
+        'accuracy': acc,
+        'f1_macro': f1_macro,
+        'f1_weighted': f1_weighted
+    }
+
+
+def retrain_model(train_df, test_df, label_map, job_id=None):
+    """Continue training the existing model with ONLY corrections"""
     
     print("\n" + "="*60)
-    print("🚀 STARTING MODEL RETRAINING")
+    print("🚀 RETRAINING MODEL WITH CORRECTIONS ONLY")
     print("="*60 + "\n")
     
-    # Load tokenizer and model
-    print("📥 Loading base model...")
-    tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_ID, use_auth_token=HF_TOKEN)
+    # Load existing model and tokenizer
+    print(f"📥 Loading existing model from {EXISTING_MODEL_PATH}...")
+    
+    if not os.path.exists(EXISTING_MODEL_PATH):
+        raise FileNotFoundError(f"Model not found at {EXISTING_MODEL_PATH}")
+    
+    tokenizer = DistilBertTokenizerFast.from_pretrained(EXISTING_MODEL_PATH)
     model = DistilBertForSequenceClassification.from_pretrained(
-        MODEL_ID, 
-        use_auth_token=HF_TOKEN,
-        num_labels=len(LABEL_MAP)
+        EXISTING_MODEL_PATH,
+        num_labels=len(label_map["id2label"]),
+        id2label=label_map["id2label"],
+        label2id=label_map["label2id"],
+        dropout=0.3,
+        attention_dropout=0.3,
+        ignore_mismatched_sizes=True
     )
     
-    # Set device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    print(f"✅ Model loaded on: {device}\n")
+    model.config.use_cache = False
+    model.gradient_checkpointing_enable()
     
-    # Create datasets
-    train_dataset = TransactionDataset(
-        train_df['text'].values,
-        train_df['label'].values,
-        tokenizer
+    print("✅ Model loaded successfully\n")
+    
+    # Tokenize data
+    def tokenize_fn(batch):
+        tokenized = tokenizer(
+            batch["text"],
+            truncation=True,
+            padding="max_length",
+            max_length=MAX_LENGTH,
+            return_attention_mask=True
+        )
+        tokenized["labels"] = batch["label_id"]
+        return tokenized
+    
+    dataset = DatasetDict({
+        "train": Dataset.from_pandas(train_df, preserve_index=False),
+        "test": Dataset.from_pandas(test_df, preserve_index=False)
+    })
+    
+    tokenized_dataset = dataset.map(tokenize_fn, batched=True)
+    
+    # Calculate class weights
+    class_counts = train_df["label_id"].value_counts().sort_index().values
+    beta = 0.9999
+    effective_num = 1.0 - np.power(beta, class_counts)
+    weights = (1.0 - beta) / effective_num
+    weights = weights / weights.sum() * len(weights)
+    class_weights = torch.tensor(weights, dtype=torch.float)
+    
+    print(f"📊 Class weights: {class_weights}\n")
+    
+    # Training arguments
+    training_args = TrainingArguments(
+        output_dir=OUTPUT_DIR,
+        num_train_epochs=EPOCHS,
+        per_device_train_batch_size=BATCH_SIZE,
+        per_device_eval_batch_size=BATCH_SIZE,
+        gradient_accumulation_steps=GRADIENT_ACCUMULATION_STEPS,
+        learning_rate=LEARNING_RATE,
+        weight_decay=0.01,
+        warmup_steps=100,
+        eval_strategy="epoch",
+        save_strategy="epoch",
+        logging_steps=50,
+        load_best_model_at_end=True,
+        metric_for_best_model="f1_weighted",
+        greater_is_better=True,
+        report_to="none",
+        save_total_limit=2,
+        fp16=False,
+        gradient_checkpointing=True,
     )
     
-    val_dataset = TransactionDataset(
-        val_df['text'].values,
-        val_df['label'].values,
-        tokenizer
+    # Create trainer
+    trainer = WeightedTrainer(
+        model=model,
+        args=training_args,
+        train_dataset=tokenized_dataset["train"],
+        eval_dataset=tokenized_dataset["test"],
+        compute_metrics=compute_metrics,
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
+        class_weights=class_weights
     )
     
-    # Create dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE)
+    # Train
+    print("🚀 Starting training...")
+    trainer.train()
     
-    # Optimizer and scheduler
-    optimizer = AdamW(model.parameters(), lr=LEARNING_RATE)
-    total_steps = len(train_loader) * EPOCHS
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=0,
-        num_training_steps=total_steps
-    )
+    # Evaluate
+    print("\n" + "="*60)
+    print("📊 FINAL EVALUATION")
+    print("="*60)
     
-    # Training loop
-    best_val_acc = 0
+    eval_results = trainer.evaluate()
+    print(f"\n✅ Test Accuracy: {eval_results['eval_accuracy']:.4f}")
+    print(f"✅ Test F1 (macro): {eval_results['eval_f1_macro']:.4f}")
+    print(f"✅ Test F1 (weighted): {eval_results['eval_f1_weighted']:.4f}")
     
-    for epoch in range(EPOCHS):
-        print(f"\n📚 Epoch {epoch + 1}/{EPOCHS}")
-        print("-" * 60)
+    # Classification report
+    predictions = trainer.predict(tokenized_dataset["test"])
+    pred_labels = np.argmax(predictions.predictions, axis=-1)
+    true_labels = predictions.label_ids
+    
+    print("\n" + "="*60)
+    print("📋 CLASSIFICATION REPORT")
+    print("="*60)
+    print(classification_report(
+        true_labels, 
+        pred_labels, 
+        target_names=[label_map["id2label"][str(i)] for i in range(len(label_map["id2label"]))],
+        digits=4,
+        zero_division=0
+    ))
+    
+    # Save model
+    print(f"\n💾 Saving retrained model to {OUTPUT_DIR}...")
+    trainer.save_model(OUTPUT_DIR)
+    tokenizer.save_pretrained(OUTPUT_DIR)
+    
+    # Save metadata
+    metadata = {
+        "retrained_at": datetime.now().isoformat(),
+        "base_model": EXISTING_MODEL_PATH,
+        "training_method": "corrections_only",
+        "original_data_used": False,
+        "epochs": EPOCHS,
+        "learning_rate": LEARNING_RATE,
+        "best_accuracy": eval_results['eval_accuracy'],
+        "best_f1_weighted": eval_results['eval_f1_weighted'],
+        "train_samples": len(train_df),
+        "test_samples": len(test_df),
+        "job_id": job_id
+    }
+    
+    with open(f"{OUTPUT_DIR}/retrain_metadata.json", "w") as f:
+        json.dump(metadata, f, indent=2)
+    
+    print("✅ Model saved successfully!\n")
+    
+    return eval_results['eval_f1_weighted']
+
+
+def mark_corrections_used():
+    """Mark corrections as used in database"""
+    try:
+        print("📝 Marking corrections as used...")
+        response = requests.post(
+            f"{BACKEND_URL}/api/retraining/mark-used",
+            timeout=10
+        )
+        if response.status_code == 200:
+            print("✅ Corrections marked as used")
+        else:
+            print(f"⚠️ Failed to mark corrections: {response.status_code}")
+    except Exception as e:
+        print(f"⚠️ Error marking corrections: {e}")
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--job-id', type=str, help='Retraining job ID')
+    parser.add_argument('--min-samples', type=int, default=50, help='Minimum samples required')
+    args = parser.parse_args()
+    
+    job_id = args.job_id
+    
+    print("\n" + "="*60)
+    print("🔄 MODEL RETRAINING WITH CORRECTIONS ONLY")
+    print("="*60 + "\n")
+    
+    if job_id:
+        print(f"📋 Job ID: {job_id}\n")
+        update_job_status(job_id, "running")
+    
+    try:
+        # Prepare data (ONLY corrections, no original data)
+        train_df, test_df, label_map = prepare_training_data()
         
-        # Training
-        model.train()
-        train_loss = 0
-        train_correct = 0
-        train_total = 0
+        if train_df is None:
+            error_msg = "No corrections available for retraining"
+            print(f"❌ {error_msg}")
+            if job_id:
+                update_job_status(job_id, "failed", {"errorMessage": error_msg})
+            sys.exit(1)
         
-        progress_bar = tqdm(train_loader, desc="Training")
+        # Check minimum samples
+        if len(train_df) < args.min_samples:
+            error_msg = f"Insufficient samples: {len(train_df)} < {args.min_samples}"
+            print(f"⚠️ {error_msg}")
+            if job_id:
+                update_job_status(job_id, "failed", {"errorMessage": error_msg})
+            sys.exit(1)
         
-        for batch in progress_bar:
-            input_ids = batch['input_ids'].to(device)
-            attention_mask = batch['attention_mask'].to(device)
-            labels = batch['labels'].to(device)
-            
-            optimizer.zero_grad()
-            
-            outputs = model(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                labels=labels
-            )
-            
-            loss = outputs.loss
-            loss.backward()
-            optimizer.step()
-            scheduler.step()
-            
-            train_loss += loss.item()
-            
-            # Calculate accuracy
-            predictions = torch.argmax(outputs.logits, dim=1)
-            train_correct += (predictions == labels).sum().item()
-            train_total += labels.size(0)
-            
-            progress_bar.set_postfix({
-                'loss': f'{loss.item():.4f}',
-                'acc': f'{train_correct/train_total:.4f}'
+        # Retrain model with ONLY corrections
+        best_f1 = retrain_model(train_df, test_df, label_map, job_id)
+        
+        # Update job status
+        if job_id:
+            update_job_status(job_id, "completed", {
+                "trainSamples": len(train_df),
+                "valSamples": len(test_df),
+                "bestValAccuracy": float(best_f1)
             })
         
-        avg_train_loss = train_loss / len(train_loader)
-        train_accuracy = train_correct / train_total
+        # Mark corrections as used
+        mark_corrections_used()
         
-        # Validation
-        model.eval()
-        val_loss = 0
-        val_correct = 0
-        val_total = 0
-        
-        with torch.no_grad():
-            for batch in tqdm(val_loader, desc="Validation"):
-                input_ids = batch['input_ids'].to(device)
-                attention_mask = batch['attention_mask'].to(device)
-                labels = batch['labels'].to(device)
-                
-                outputs = model(
-                    input_ids=input_ids,
-                    attention_mask=attention_mask,
-                    labels=labels
-                )
-                
-                val_loss += outputs.loss.item()
-                
-                predictions = torch.argmax(outputs.logits, dim=1)
-                val_correct += (predictions == labels).sum().item()
-                val_total += labels.size(0)
-        
-        avg_val_loss = val_loss / len(val_loader)
-        val_accuracy = val_correct / val_total
-        
-        print(f"\n📊 Results:")
-        print(f"   Train Loss: {avg_train_loss:.4f} | Train Acc: {train_accuracy:.4f}")
-        print(f"   Val Loss: {avg_val_loss:.4f} | Val Acc: {val_accuracy:.4f}")
-        
-        # Save best model
-        if val_accuracy > best_val_acc:
-            best_val_acc = val_accuracy
-            print(f"\n💾 Saving best model (val_acc: {val_accuracy:.4f})...")
-            
-            os.makedirs(OUTPUT_DIR, exist_ok=True)
-            model.save_pretrained(OUTPUT_DIR)
-            tokenizer.save_pretrained(OUTPUT_DIR)
-            
-            # Save metadata
-            metadata = {
-                "retrained_at": datetime.now().isoformat(),
-                "base_model": MODEL_ID,
-                "epochs": EPOCHS,
-                "learning_rate": LEARNING_RATE,
-                "best_val_accuracy": best_val_acc,
-                "train_samples": len(train_df),
-                "val_samples": len(val_df)
-            }
-            
-            with open(f"{OUTPUT_DIR}/retrain_metadata.json", "w") as f:
-                json.dump(metadata, f, indent=2)
-            
-            print("✅ Model saved!")
-    
-    print("\n" + "="*60)
-    print(f"🎉 RETRAINING COMPLETE!")
-    print(f"   Best Validation Accuracy: {best_val_acc:.4f}")
-    print(f"   Model saved to: {OUTPUT_DIR}")
-    print("="*60 + "\n")
-    
-    return model, tokenizer
-
-
-def upload_to_huggingface(model, tokenizer):
-    """Upload retrained model to HuggingFace (optional)"""
-    try:
-        from huggingface_hub import login, HfApi
-        
-        login(HF_TOKEN)
-        
-        print("\n📤 Uploading to HuggingFace...")
-        model.push_to_hub(MODEL_ID, use_auth_token=HF_TOKEN)
-        tokenizer.push_to_hub(MODEL_ID, use_auth_token=HF_TOKEN)
-        print("✅ Model uploaded to HuggingFace!")
+        print("\n" + "="*60)
+        print("🎉 RETRAINING COMPLETE!")
+        print("="*60)
+        print(f"\n✅ Retrained model saved to: {OUTPUT_DIR}")
+        print(f"✅ Best F1 Score: {best_f1:.4f}")
+        print(f"✅ Trained on {len(train_df)} corrections (NO original data)")
+        print(f"\n💡 To use the new model:")
+        print(f"   1. Backup current: mv ./model ./model.backup")
+        print(f"   2. Use retrained: mv ./model/retrained ./model")
         
     except Exception as e:
-        print(f"⚠️  Could not upload to HuggingFace: {e}")
-        print("   Model is saved locally in ./model/retrained")
+        error_msg = str(e)
+        print(f"\n❌ Error: {error_msg}")
+        if job_id:
+            update_job_status(job_id, "failed", {"errorMessage": error_msg})
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    print("\n" + "="*60)
-    print("🔄 MODEL RETRAINING PIPELINE")
-    print("="*60 + "\n")
-    
-    # Prepare data
-    train_df, val_df = prepare_data()
-    
-    if train_df is None:
-        print("❌ No data available for retraining. Exiting.")
-        exit(1)
-    
-    # Check minimum samples
-    if len(train_df) < 50:
-        print(f"⚠️  Warning: Only {len(train_df)} training samples. Consider collecting more corrections.")
-        response = input("Continue anyway? (y/n): ")
-        if response.lower() != 'y':
-            print("❌ Retraining cancelled.")
-            exit(0)
-    
-    # Train model
-    model, tokenizer = train_model(train_df, val_df)
-    
-    # Optional: Upload to HuggingFace
-    upload_choice = input("\n📤 Upload retrained model to HuggingFace? (y/n): ")
-    if upload_choice.lower() == 'y':
-        upload_to_huggingface(model, tokenizer)
-    
-    print("\n✅ All done! Your model is ready to use.")
-    print(f"   Local path: {OUTPUT_DIR}")
-    print(f"   To use it, update MODEL_ID in .env to point to the retrained model.")
+    main()

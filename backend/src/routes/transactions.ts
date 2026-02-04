@@ -1,6 +1,7 @@
 import { Router } from "express";
 import prisma from "../lib/prisma";
 import { authMiddleware } from "../middleware/auth";
+import { checkAndTriggerRetraining } from "../services/retraining";
 
 const router = Router();
 
@@ -59,18 +60,17 @@ router.post("/manual", authMiddleware, async (req, res) => {
         remarks: remarks || null,
         amountPlus: type === "INCOME" ? parseFloat(amount) : 0,
         amountMinus: type === "EXPENSE" ? parseFloat(amount) : 0,
-        balance: 0, // You can calculate this based on your logic
+        balance: 0,
         
-        // For manual entries, there's no AI prediction
         predicted: null,
         predictedLabel: null,
         
-        // Manual entries go directly to corrected with 100% confidence
-        corrected: null, // You can add category IDs if needed
+        corrected: null,
         correctedLabel: type === "EXPENSE" ? categoryLabel : null,
         
-        confidence: 1.0, // 100% confidence for manual entries
-        source: "MANUAL"
+        confidence: 1.0,
+        source: "MANUAL",
+        usedForTraining: false
       }
     });
 
@@ -82,7 +82,7 @@ router.post("/manual", authMiddleware, async (req, res) => {
 });
 
 /**
- * 3️⃣ CORRECT AI PREDICTION
+ * 3️⃣ CORRECT AI PREDICTION - WITH AUTO RETRAINING CHECK
  */
 router.patch("/:id/correct", authMiddleware, async (req, res) => {
   try {
@@ -112,29 +112,26 @@ router.patch("/:id/correct", authMiddleware, async (req, res) => {
       return res.status(404).json({ error: "Transaction not found" });
     }
 
-    // Update transaction with corrected category and set confidence to 100%
+    // Update transaction with corrected category
     const updated = await prisma.transactions.update({
       where: { id: transactionId },
       data: {
-        corrected: transaction.predicted, // Keep the original prediction ID
+        corrected: transaction.predicted,
         correctedLabel: correctedLabel,
-        confidence: 1.0 // Set to 100% after user correction
+        confidence: 1.0,
+        usedForTraining: false  // Mark as not yet used for training
       }
     });
 
-    // Store feedback for retraining only if there was an AI prediction
-    if (transaction.predicted !== null) {
-      await prisma.feedback.create({
-        data: {
-          text: transaction.remarks ?? "",
-          predicted: transaction.predicted,
-          corrected: transaction.predicted, // Using the same ID since we don't have category IDs
-          confidence: transaction.confidence ?? 0
-        }
-      });
-    }
+    // 🔥 CHECK IF WE SHOULD TRIGGER RETRAINING
+    // This is the ONLY line added to your existing code!
+    const retrainingResult = await checkAndTriggerRetraining();
 
-    res.json(updated);
+    res.json({
+      ...updated,
+      retrainingTriggered: retrainingResult.triggered,
+      retrainingJobId: retrainingResult.jobId
+    });
   } catch (err) {
     console.error("Error correcting transaction:", err);
     res.status(500).json({ error: "Failed to correct transaction" });
@@ -142,7 +139,7 @@ router.patch("/:id/correct", authMiddleware, async (req, res) => {
 });
 
 /**
- * 4️⃣ DELETE TRANSACTION (Optional - for better UX)
+ * 4️⃣ DELETE TRANSACTION
  */
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
