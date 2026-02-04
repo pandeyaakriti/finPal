@@ -9,7 +9,7 @@ const menuItems = [
   { name: 'Budgets', href: '/budgets' },
   { name: 'Debts', href: '/debts' },
   { name: 'Charts', href: '/charts' },
-  { name: 'Net Worth Prediction', href: '/net-worth' },
+  { name: 'Net Worth Prediction', href: '/networth' },
   { name: 'Upload', href: '/upload' },
   { name: 'Synchronization', href: '/sync' },
 ];

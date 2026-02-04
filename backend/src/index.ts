@@ -14,6 +14,8 @@ import bodyParser from "body-parser";
 import aiLabelingRoutes from './routes/aiLabeling';
 import transactions from "./routes/transactions";
 import retrainingRoutes from "./routes/retraining";
+import netWorthRoutes from "./routes/networth";
+
 
 
 dotenv.config();
@@ -39,6 +41,7 @@ app.use("/users", userRoutes);
 app.use("/expenses", expenseRoutes);
 app.use("/incomes", incomeRoutes);
 app.use("/transactions", transactions);
+app.use("/api/predict/financial-health", netWorthRoutes);
 app.use("/api/charts", require("./routes/charts").default);
 app.use("/api/ai-labeling", aiLabelingRoutes);
 app.use("/uploads", express.static('uploads'));
