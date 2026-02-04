@@ -5,26 +5,43 @@ import { authMiddleware } from "../middleware/auth";
 const router = Router();
 const prisma = new PrismaClient();
 
-// Get all AI-labeled expense transactions for charts
+// Get all expense transactions for charts (filtered by user)
 router.get("/", authMiddleware, async (req: any, res) => {
   try {
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const data = await prisma.transactions.findMany({
       where: {
-        amountMinus: { gt: 0 },
-        predictedLabel: { not: null }
+        userId: userId,
+        amountMinus: { gt: 0 }
       },
       select: {
         amountMinus: true,
         predictedLabel: true,
         correctedLabel: true,
         createdAt: true
+      },
+      orderBy: {
+        createdAt: 'asc'
       }
     });
 
-    res.json(data);
+    // Map data to use correctedLabel if available, otherwise predictedLabel
+    const formattedData = data.map(transaction => ({
+      amountMinus: transaction.amountMinus,
+      predictedLabel: transaction.correctedLabel || transaction.predictedLabel || 'Uncategorized',
+      createdAt: transaction.createdAt
+    }));
+
+    res.json(formattedData);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Failed to fetch transactions" });
+    res.status(500).json({ error: "Failed to fetch transactions for charts" });
   }
 });
+
 export default router;

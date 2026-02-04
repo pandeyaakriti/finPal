@@ -1,89 +1,115 @@
-//frontend/app/charts/page.tsx
+// frontend/app/charts/page.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { TrendingUp, TrendingDown, Calendar, DollarSign, Activity } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 
-// Sample data for charts
-// const categoryData = [
-//   { name: 'Food & Dining', value: 3500, color: '#7AD1A6' },
-//   { name: 'Transportation', value: 2800, color: '#90A1B9' },
-//   { name: 'Shopping', value: 2200, color: '#5B6F70' },
-//   { name: 'Entertainment', value: 1500, color: '#A8C5DD' },
-//   { name: 'Bills & Utilities', value: 2000, color: '#6B8E9F' },
-//   { name: 'Healthcare', value: 1200, color: '#8BBDAB' },
-//   { name: 'Others', value: 800, color: '#B0BEC5' },
-// ];
-
-// const monthlyData = [
-//   { month: 'Jan', expenses: 12500, income: 18000 },
-//   { month: 'Feb', expenses: 13200, income: 18000 },
-//   { month: 'Mar', expenses: 11800, income: 18500 },
-//   { month: 'Apr', expenses: 14000, income: 18000 },
-//   { month: 'May', expenses: 13500, income: 19000 },
-//   { month: 'Jun', expenses: 14000, income: 18000 },
-// ];
-
-// const trendData = [
-//   { month: 'Jan', amount: 12500 },
-//   { month: 'Feb', amount: 13200 },
-//   { month: 'Mar', amount: 11800 },
-//   { month: 'Apr', amount: 14000 },
-//   { month: 'May', amount: 13500 },
-//   { month: 'Jun', amount: 14000 },
-// ];
-
+// Color palette for categories
+const COLORS = [
+  '#7AD1A6', '#90A1B9', '#5B6F70', '#A8C5DD', '#6B8E9F', 
+  '#8BBDAB', '#B0BEC5', '#85C7D0', '#A4B8C4', '#7FA99B'
+];
 
 export default function Charts() {
   const [categoryData, setCategoryData] = useState<any[]>([]);
-const [monthlyData, setMonthlyData] = useState<any[]>([]);
-const [trendData, setTrendData] = useState<any[]>([]);
- useEffect(() => {
-    fetch("http://localhost:5000/api/charts", {
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("token")
-      }
-    })
-      .then(res => res.json())
-      .then(rows => {
-        const byCategory: any = {};
-        const byMonth: any = {};
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [trendData, setTrendData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [timeRange, setTimeRange] = useState('6M');
 
-        rows.forEach((r: any) => {
-          const cat = r.predictedLabel || "unknown";
-          byCategory[cat] = (byCategory[cat] || 0) + r.amountMinus;
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-          const month = new Date(r.createdAt).toLocaleString("en", { month: "short" });
-          byMonth[month] = (byMonth[month] || 0) + r.amountMinus;
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setError("Please log in to view charts");
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch("http://localhost:5000/api/charts", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         });
 
-        setCategoryData(
-          Object.entries(byCategory).map(([name, value]) => ({ name, value }))
-        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch chart data");
+        }
 
-        setMonthlyData(
-          Object.entries(byMonth).map(([month, expenses]) => ({ month, expenses }))
-        );
-      });
+        const rows = await response.json();
+
+        // Process data for category breakdown
+        const byCategory: Record<string, number> = {};
+        const byMonth: Record<string, { expenses: number; income: number }> = {};
+
+        rows.forEach((r: any) => {
+          const cat = r.predictedLabel || "Uncategorized";
+          byCategory[cat] = (byCategory[cat] || 0) + r.amountMinus;
+
+          const date = new Date(r.createdAt);
+          const monthKey = date.toLocaleString("en", { month: "short", year: "numeric" });
+          
+          if (!byMonth[monthKey]) {
+            byMonth[monthKey] = { expenses: 0, income: 0 };
+          }
+          byMonth[monthKey].expenses += r.amountMinus;
+        });
+
+        // Format category data with colors
+        const formattedCategoryData = Object.entries(byCategory)
+          .map(([name, value], index) => ({ 
+            name, 
+            value: Number(value.toFixed(2)),
+            color: COLORS[index % COLORS.length]
+          }))
+          .sort((a, b) => b.value - a.value);
+
+        setCategoryData(formattedCategoryData);
+
+        // Format monthly data
+        const formattedMonthlyData = Object.entries(byMonth)
+          .map(([month, data]) => ({ 
+            month: month.split(' ')[0], // Just the month name
+            expenses: Number(data.expenses.toFixed(2)),
+            income: 0 // You can add income data if available
+          }))
+          .slice(-6); // Last 6 months
+
+        setMonthlyData(formattedMonthlyData);
+        setTrendData(formattedMonthlyData.map(d => ({ month: d.month, amount: d.expenses })));
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching chart data:", err);
+        setError("Failed to load chart data");
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
-  const [timeRange, setTimeRange] = useState('6M');
+
   const totalExpenses = categoryData.reduce((sum, item) => sum + item.value, 0);
-  const avgMonthly = monthlyData.reduce((sum, item) => sum + item.expenses, 0) / monthlyData.length;
-  // const lastMonth = monthlyData[monthlyData.length - 1];
-  // const prevMonth = monthlyData[monthlyData.length - 2];
-  // const monthChange = ((lastMonth.expenses - prevMonth.expenses) / prevMonth.expenses) * 100;
-let monthChange = 0;
+  const avgMonthly = monthlyData.length > 0 
+    ? monthlyData.reduce((sum, item) => sum + item.expenses, 0) / monthlyData.length 
+    : 0;
 
-if (monthlyData.length >= 2) {
-  const lastMonth = monthlyData[monthlyData.length - 1];
-  const prevMonth = monthlyData[monthlyData.length - 2];
+  let monthChange = 0;
+  if (monthlyData.length >= 2) {
+    const lastMonth = monthlyData[monthlyData.length - 1];
+    const prevMonth = monthlyData[monthlyData.length - 2];
 
-  if (prevMonth.expenses !== 0) {
-    monthChange =
-      ((lastMonth.expenses - prevMonth.expenses) / prevMonth.expenses) * 100;
+    if (prevMonth.expenses !== 0) {
+      monthChange = ((lastMonth.expenses - prevMonth.expenses) / prevMonth.expenses) * 100;
+    }
   }
-}
+
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -99,6 +125,33 @@ if (monthlyData.length >= 2) {
     }
     return null;
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-300">Loading charts...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-600 dark:text-red-400">{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-linear-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -210,7 +263,7 @@ if (monthlyData.length >= 2) {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => name && percent ? `${name} ${(percent * 100).toFixed(0)}%` : ''}
+                    //label={({ name, percent }) => name && percent ? `${name} ${(percent * 100).toFixed(0)}%` : ''}
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
@@ -269,42 +322,6 @@ if (monthlyData.length >= 2) {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
-
-          {/* Expense Trend Line Chart */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-linear-to-br from-[#90A1B9]/10 to-[#7AD1A6]/10 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-[#5B6F70]" />
-              </div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                Spending Trend
-              </h2>
-            </div>
-            
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={trendData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis 
-                  dataKey="month" 
-                  stroke="#6B7280"
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis 
-                  stroke="#6B7280"
-                  style={{ fontSize: '12px' }}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Line 
-                  type="monotone" 
-                  dataKey="amount" 
-                  stroke="#5B6F70" 
-                  strokeWidth={3}
-                  dot={{ fill: '#7AD1A6', r: 5 }}
-                  activeDot={{ r: 7 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
           </div>
 
           {/* Top Categories List */}
