@@ -1,66 +1,83 @@
-
 //frontend/app/budgets.tsx
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
-import { TrendingUp, TrendingDown, Calendar, DollarSign, Target, AlertCircle, CheckCircle, PieChart, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Calendar, DollarSign, Target, AlertCircle, CheckCircle, PieChart, ArrowRight, Settings } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
-
-// Sample data - replace with actual API data
-const currentMonthBudgets = [
-  { category: 'Food & Dining', budget: 4000, spent: 3500, color: '#7AD1A6' },
-  { category: 'Transportation', budget: 3000, spent: 2800, color: '#90A1B9' },
-  { category: 'Shopping', budget: 2500, spent: 2200, color: '#5B6F70' },
-  { category: 'Entertainment', budget: 2000, spent: 1500, color: '#A8C5DD' },
-  { category: 'Bills & Utilities', budget: 2500, spent: 2000, color: '#6B8E9F' },
-  { category: 'Healthcare', budget: 1500, spent: 1200, color: '#8BBDAB' },
-];
-
-const monthlyPerformance = [
-  { month: 'Jan', budgeted: 15000, spent: 12500, saved: 2500 },
-  { month: 'Feb', budgeted: 15000, spent: 13200, saved: 1800 },
-  { month: 'Mar', budgeted: 15500, spent: 11800, saved: 3700 },
-  { month: 'Apr', budgeted: 15000, spent: 14000, saved: 1000 },
-  { month: 'May', budgeted: 16000, spent: 13500, saved: 2500 },
-  { month: 'Jun', budgeted: 15000, spent: 14000, saved: 1000 },
-];
-
-const yearlyData = [
-  { month: 'Jan', budget: 15000, actual: 12500 },
-  { month: 'Feb', budget: 15000, actual: 13200 },
-  { month: 'Mar', budget: 15500, actual: 11800 },
-  { month: 'Apr', budget: 15000, actual: 14000 },
-  { month: 'May', budget: 16000, actual: 13500 },
-  { month: 'Jun', budget: 15000, actual: 14000 },
-  { month: 'Jul', budget: 15000, actual: 13800 },
-  { month: 'Aug', budget: 15500, actual: 14200 },
-  { month: 'Sep', budget: 15000, actual: 12900 },
-  { month: 'Oct', budget: 15500, actual: 14500 },
-  { month: 'Nov', budget: 16000, actual: 15200 },
-  { month: 'Dec', budget: 16500, actual: 15800 },
-];
-
-const categoryRadarData = currentMonthBudgets.map(item => ({
-  category: item.category.split(' ')[0],
-  usage: Math.round((item.spent / item.budget) * 100),
-}));
+import BudgetSettings from '@/components/budgetSettings';
+import { getCurrentMonthAnalytics, getMonthlyAnalytics, getYearlyAnalytics } from '@/lib/budgetApi';
 
 export default function Budgets() {
   const [activeTab, setActiveTab] = useState<'current' | 'monthly' | 'yearly'>('current');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  // State for real data
+  const [currentMonthBudgets, setCurrentMonthBudgets] = useState<any[]>([]);
+  const [monthlyPerformance, setMonthlyPerformance] = useState<any[]>([]);
+  const [yearlyData, setYearlyData] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // Load all data in parallel
+      const [currentData, monthlyData, yearlyDataRes] = await Promise.all([
+        getCurrentMonthAnalytics(),
+        getMonthlyAnalytics(6),
+        getYearlyAnalytics(),
+      ]);
+
+      // Transform current month data to match frontend format
+      const transformedCurrent = currentData.map((item, index) => ({
+        category: item.category,
+        budget: item.budget,
+        spent: item.spent,
+        color: ['#7AD1A6', '#90A1B9', '#5B6F70', '#A8C5DD', '#6B8E9F', '#8BBDAB'][index % 6],
+      }));
+
+      setCurrentMonthBudgets(transformedCurrent);
+      setMonthlyPerformance(monthlyData);
+      setYearlyData(yearlyDataRes);
+    } catch (error) {
+      console.error('Error loading budget data:', error);
+      // Set empty arrays if there's an error
+      setCurrentMonthBudgets([]);
+      setMonthlyPerformance([]);
+      setYearlyData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBudgetsSaved = () => {
+    // Reload data after budgets are saved
+    loadData();
+  };
   
   const totalBudget = currentMonthBudgets.reduce((sum, item) => sum + item.budget, 0);
   const totalSpent = currentMonthBudgets.reduce((sum, item) => sum + item.spent, 0);
   const totalRemaining = totalBudget - totalSpent;
-  const overallProgress = (totalSpent / totalBudget) * 100;
+  const overallProgress = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
-  const onTrackCount = currentMonthBudgets.filter(b => (b.spent / b.budget) <= 0.9).length;
-  const warningCount = currentMonthBudgets.filter(b => (b.spent / b.budget) > 0.9 && (b.spent / b.budget) <= 1).length;
-  const overBudgetCount = currentMonthBudgets.filter(b => (b.spent / b.budget) > 1).length;
+  const onTrackCount = currentMonthBudgets.filter(b => b.budget > 0 && (b.spent / b.budget) <= 0.9).length;
+  const warningCount = currentMonthBudgets.filter(b => b.budget > 0 && (b.spent / b.budget) > 0.9 && (b.spent / b.budget) <= 1).length;
+  const overBudgetCount = currentMonthBudgets.filter(b => b.budget > 0 && (b.spent / b.budget) > 1).length;
 
   const yearlyTotalBudget = yearlyData.reduce((sum, item) => sum + item.budget, 0);
   const yearlyTotalSpent = yearlyData.reduce((sum, item) => sum + item.actual, 0);
   const yearlyTotalSaved = yearlyTotalBudget - yearlyTotalSpent;
-  const yearlySavingsRate = (yearlyTotalSaved / yearlyTotalBudget) * 100;
+  const yearlySavingsRate = yearlyTotalBudget > 0 ? (yearlyTotalSaved / yearlyTotalBudget) * 100 : 0;
+
+  const categoryRadarData = currentMonthBudgets
+    .filter(item => item.budget > 0)
+    .map(item => ({
+      category: item.category.split(' ')[0],
+      usage: Math.round((item.spent / item.budget) * 100),
+    }));
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -80,12 +97,25 @@ export default function Budgets() {
   };
 
   const getBudgetStatus = (spent: number, budget: number) => {
+    if (budget === 0) return { status: 'not-set', color: 'text-gray-500', bg: 'bg-gray-100 dark:bg-gray-900/30' };
+    
     const percentage = (spent / budget) * 100;
     if (percentage <= 75) return { status: 'excellent', color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/30' };
     if (percentage <= 90) return { status: 'good', color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30' };
     if (percentage <= 100) return { status: 'warning', color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30' };
     return { status: 'over', color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30' };
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#7AD1A6] mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading budget data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-linear-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -97,9 +127,18 @@ export default function Budgets() {
         {/* Header */}
         <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-              Budget Insights
-            </h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                Budget Insights
+              </h1>
+              <button
+                onClick={() => setIsSettingsOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] text-white rounded-lg hover:shadow-lg transition-all"
+              >
+                <Settings className="w-4 h-4" />
+                Set Budgets
+              </button>
+            </div>
             
             {/* Tab Selector */}
             <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
@@ -140,8 +179,28 @@ export default function Budgets() {
         {/* Main Content */}
         <main className="max-w-7xl mx-auto w-full px-6 py-8 space-y-6">
           
+          {/* Show message if no budgets set */}
+          {currentMonthBudgets.length === 0 && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-8 border border-blue-200 dark:border-blue-800 text-center">
+              <Target className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                No Budgets Set Yet
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Start by setting your monthly spending targets for different categories
+              </p>
+              <button
+                onClick={() => setIsSettingsOpen(true)}
+                className="px-6 py-3 bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] text-white rounded-lg hover:shadow-lg transition-all inline-flex items-center gap-2"
+              >
+                <Settings className="w-5 h-5" />
+                Set Your Budgets
+              </button>
+            </div>
+          )}
+
           {/* Current Month Tab */}
-          {activeTab === 'current' && (
+          {activeTab === 'current' && currentMonthBudgets.length > 0 && (
             <>
               {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -179,7 +238,7 @@ export default function Budgets() {
                       <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
                     </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
+                  <h3 className={`text-2xl font-bold mb-1 ${totalRemaining >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                     NPR {totalRemaining.toLocaleString()}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Remaining</p>
@@ -233,21 +292,23 @@ export default function Budgets() {
               </div>
 
               {/* Budget Usage Radar Chart */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
-                  Budget Usage Overview
-                </h2>
-                
-                <ResponsiveContainer width="100%" height={400}>
-                  <RadarChart data={categoryRadarData}>
-                    <PolarGrid stroke="#E5E7EB" />
-                    <PolarAngleAxis dataKey="category" style={{ fontSize: '12px' }} />
-                    <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                    <Radar name="Usage %" dataKey="usage" stroke="#5B6F70" fill="#7AD1A6" fillOpacity={0.6} />
-                    <Tooltip />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
+              {categoryRadarData.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
+                    Budget Usage Overview
+                  </h2>
+                  
+                  <ResponsiveContainer width="100%" height={400}>
+                    <RadarChart data={categoryRadarData}>
+                      <PolarGrid stroke="#E5E7EB" />
+                      <PolarAngleAxis dataKey="category" style={{ fontSize: '12px' }} />
+                      <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                      <Radar name="Usage %" dataKey="usage" stroke="#5B6F70" fill="#7AD1A6" fillOpacity={0.6} />
+                      <Tooltip />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </>
           )}
 
@@ -264,7 +325,9 @@ export default function Budgets() {
                     </h3>
                   </div>
                   <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                    NPR {Math.round(monthlyPerformance.reduce((sum, m) => sum + m.budgeted, 0) / monthlyPerformance.length).toLocaleString()}
+                    NPR {monthlyPerformance.length > 0 
+                      ? Math.round(monthlyPerformance.reduce((sum, m) => sum + m.budgeted, 0) / monthlyPerformance.length).toLocaleString()
+                      : '0'}
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Average Monthly Budget</p>
                 </div>
@@ -297,62 +360,66 @@ export default function Budgets() {
               </div>
 
               {/* Budget vs Actual Chart */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
-                  Budget Performance (Last 6 Months)
-                </h2>
-                
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={monthlyPerformance}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis 
-                      dataKey="month" 
-                      stroke="#6B7280"
-                      style={{ fontSize: '12px' }}
-                    />
-                    <YAxis 
-                      stroke="#6B7280"
-                      style={{ fontSize: '12px' }}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Bar dataKey="budgeted" fill="#90A1B9" radius={[8, 8, 0, 0]} name="Budgeted" />
-                    <Bar dataKey="spent" fill="#7AD1A6" radius={[8, 8, 0, 0]} name="Spent" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {monthlyPerformance.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
+                    Budget Performance (Last 6 Months)
+                  </h2>
+                  
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={monthlyPerformance}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                      <XAxis 
+                        dataKey="month" 
+                        stroke="#6B7280"
+                        style={{ fontSize: '12px' }}
+                      />
+                      <YAxis 
+                        stroke="#6B7280"
+                        style={{ fontSize: '12px' }}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend />
+                      <Bar dataKey="budgeted" fill="#90A1B9" radius={[8, 8, 0, 0]} name="Budgeted" />
+                      <Bar dataKey="spent" fill="#7AD1A6" radius={[8, 8, 0, 0]} name="Spent" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
 
               {/* Savings Trend */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
-                  Monthly Savings Trend
-                </h2>
-                
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={monthlyPerformance}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis 
-                      dataKey="month" 
-                      stroke="#6B7280"
-                      style={{ fontSize: '12px' }}
-                    />
-                    <YAxis 
-                      stroke="#6B7280"
-                      style={{ fontSize: '12px' }}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="saved" 
-                      stroke="#7AD1A6" 
-                      strokeWidth={3}
-                      dot={{ fill: '#5B6F70', r: 5 }}
-                      activeDot={{ r: 7 }}
-                      name="Saved"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              {monthlyPerformance.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
+                    Monthly Savings Trend
+                  </h2>
+                  
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={monthlyPerformance}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                      <XAxis 
+                        dataKey="month" 
+                        stroke="#6B7280"
+                        style={{ fontSize: '12px' }}
+                      />
+                      <YAxis 
+                        stroke="#6B7280"
+                        style={{ fontSize: '12px' }}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Line 
+                        type="monotone" 
+                        dataKey="saved" 
+                        stroke="#7AD1A6" 
+                        strokeWidth={3}
+                        dot={{ fill: '#5B6F70', r: 5 }}
+                        activeDot={{ r: 7 }}
+                        name="Saved"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </>
           )}
 
@@ -393,48 +460,57 @@ export default function Budgets() {
               </div>
 
               {/* Yearly Budget vs Actual */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
-                  Yearly Budget Performance
-                </h2>
-                
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={yearlyData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis 
-                      dataKey="month" 
-                      stroke="#6B7280"
-                      style={{ fontSize: '12px' }}
-                    />
-                    <YAxis 
-                      stroke="#6B7280"
-                      style={{ fontSize: '12px' }}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="budget" 
-                      stroke="#90A1B9" 
-                      strokeWidth={3}
-                      dot={{ fill: '#90A1B9', r: 4 }}
-                      name="Budget"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="actual" 
-                      stroke="#7AD1A6" 
-                      strokeWidth={3}
-                      dot={{ fill: '#7AD1A6', r: 4 }}
-                      name="Actual"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              {yearlyData.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
+                    Yearly Budget Performance
+                  </h2>
+                  
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={yearlyData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                      <XAxis 
+                        dataKey="month" 
+                        stroke="#6B7280"
+                        style={{ fontSize: '12px' }}
+                      />
+                      <YAxis 
+                        stroke="#6B7280"
+                        style={{ fontSize: '12px' }}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="budget" 
+                        stroke="#90A1B9" 
+                        strokeWidth={3}
+                        dot={{ fill: '#90A1B9', r: 4 }}
+                        name="Budget"
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="actual" 
+                        stroke="#7AD1A6" 
+                        strokeWidth={3}
+                        dot={{ fill: '#7AD1A6', r: 4 }}
+                        name="Actual"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </>
-            )}
+          )}
         </main>
       </div>
+
+      {/* Budget Settings Modal */}
+      <BudgetSettings
+        isOpen={isSettingsOpen}
+        onCloseAction={() => setIsSettingsOpen(false)}
+        onSaveAction={handleBudgetsSaved}
+      />
     </div>
   );
 }
