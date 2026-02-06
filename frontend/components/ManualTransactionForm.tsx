@@ -118,8 +118,8 @@ export default function ManualTransactionForm({ onTransactionAdded }: ManualTran
               }}
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
                 type === "EXPENSE"
-                  ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  ? 'bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] text-white shadow-md'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-600'
               }`}
             >
               Expense
@@ -132,8 +132,8 @@ export default function ManualTransactionForm({ onTransactionAdded }: ManualTran
               }}
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
                 type === "INCOME"
-                  ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  ? 'bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] text-white shadow-md'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-600'
               }`}
             >
               Income

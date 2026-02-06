@@ -88,89 +88,105 @@ export default function BudgetSettings({ isOpen, onCloseAction, onSaveAction }: 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
         {/* Header */}
-        <div className="bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] p-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-white">Set Monthly Budgets</h2>
-          <button
-            onClick={onCloseAction}
-            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-          >
-            <X className="w-6 h-6 text-white" />
-          </button>
+        <div className="relative bg-linear-to-br from-[#90A1B9] via-[#9BB8B2] to-[#7AD1A6] p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-white mb-1">Monthly Budgets</h2>
+              <p className="text-white/80 text-sm">Set your spending targets for each category</p>
+            </div>
+            <button
+              onClick={onCloseAction}
+              className="p-2.5 hover:bg-white/20 rounded-xl transition-all duration-200 active:scale-95"
+              aria-label="Close"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+        <div className="p-8 overflow-y-auto max-h-[calc(90vh-240px)]">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7AD1A6]"></div>
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-3 border-[#7AD1A6] border-t-transparent"></div>
+              <p className="mt-4 text-gray-500 dark:text-gray-400">Loading budgets...</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                Set your monthly spending targets for each category. Your actual spending will be tracked against these budgets.
-              </p>
-
-              {DEFAULT_CATEGORIES.map((category) => (
+            <div className="space-y-3">
+              {DEFAULT_CATEGORIES.map((category, index) => (
                 <div
                   key={category}
-                  className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600"
+                  className="group relative bg-gray-50 dark:bg-gray-700/30 rounded-2xl p-5 border-2 border-gray-100 dark:border-gray-600/50 hover:border-[#7AD1A6]/30 dark:hover:border-[#7AD1A6]/30 transition-all duration-200"
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                     {category}
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <DollarSign className="w-5 h-5 text-gray-400" />
-                      <span className="text-gray-500 ml-1">NPR</span>
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <DollarSign className="w-5 h-5 text-[#90A1B9] dark:text-[#7AD1A6]" />
                     </div>
                     <input
                       type="text"
-                      value={budgets[category] || '0'}
+                      value={budgets[category] || ''}
                       onChange={(e) => handleInputChange(category, e.target.value)}
                       placeholder="0"
-                      className="w-full pl-20 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#7AD1A6] focus:border-transparent text-gray-900 dark:text-white"
+                      className="w-full pl-12 pr-16 py-3.5 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-[#7AD1A6]/50 focus:border-[#7AD1A6] transition-all duration-200 text-gray-900 dark:text-white text-lg font-medium placeholder:text-gray-400"
                     />
+                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">NPR</span>
+                    </div>
                   </div>
                 </div>
               ))}
 
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800 mt-6">
-                <p className="text-sm text-blue-800 dark:text-blue-300">
-                  <strong>Total Monthly Budget:</strong> NPR{' '}
-                  {Object.values(budgets)
-                    .reduce((sum, val) => sum + (parseFloat(val) || 0), 0)
-                    .toLocaleString()}
-                </p>
+              {/* Total Summary */}
+              <div className="mt-6 bg-linear-to-br from-[#90A1B9]/10 via-[#9BB8B2]/10 to-[#7AD1A6]/10 dark:from-[#90A1B9]/20 dark:via-[#9BB8B2]/20 dark:to-[#7AD1A6]/20 rounded-2xl p-6 border-2 border-[#7AD1A6]/20 dark:border-[#7AD1A6]/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Total Monthly Budget
+                    </p>
+                    <p className="text-3xl font-bold bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] bg-clip-text text-transparent">
+                      NPR {Object.values(budgets)
+                        .reduce((sum, val) => sum + (parseFloat(val) || 0), 0)
+                        .toLocaleString('en-NP', { maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-[#90A1B9] to-[#7AD1A6] flex items-center justify-center">
+                    <DollarSign className="w-8 h-8 text-white" />
+                  </div>
+                </div>
               </div>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 dark:bg-gray-700/50 p-6 flex gap-3 justify-end border-t border-gray-200 dark:border-gray-600">
+        <div className="bg-gray-50 dark:bg-gray-700/30 px-8 py-6 flex gap-3 justify-end border-t-2 border-gray-100 dark:border-gray-600/50">
           <button
             onClick={onCloseAction}
             disabled={saving}
-            className="px-6 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50"
+            className="px-6 py-3 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-2.5 bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-2"
+            className="px-6 py-3 text-white font-medium rounded-xl hover:shadow-lg hover:bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
           >
             {saving ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
                 Saving...
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" />
+                <Save className="w-5 h-5" />
                 Save Budgets
               </>
             )}

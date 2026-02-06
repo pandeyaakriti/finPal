@@ -101,133 +101,226 @@ export default function CsvUploadPage() {
   };
 
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <Sidebar headerTitle="Upload CSV File" />
+    <div className="min-h-screen flex bg-linear-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <Sidebar/>
 
       {/* Main Content */}
-      <div className="flex-1 bg-linear-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
-        <div className="max-w-3xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Upload CSV File
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Upload your CSV file to process and analyze your data
-            </p>
-          </div>
-
-          {/* Upload Card */}
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="p-8">
-              {/* Drag and Drop Zone */}
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                className={`relative border-2 border-dashed rounded-xl p-12 transition-all duration-200 ${
-                  isDragging
-                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                    : 'border-gray-300 dark:border-gray-600 hover:border-[#7ECBAA] dark:hover:border-[#7ECBAA]'
-                }`}
-              >
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-
-                <div className="text-center">
-                  <div className="mb-4 flex justify-center">
-                    <div className="w-16 h-16 rounded-full bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] flex items-center justify-center shadow-lg">
-                      <Upload className="w-8 h-8 text-white" />
-                    </div>
-                  </div>
-
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    {isDragging ? 'Drop your file here' : 'Drag and drop your CSV file'}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    or click to browse from your computer
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">
-                    Supported format: CSV (Comma-Separated Values)
-                  </p>
-                </div>
+      <div className="flex-1 flex flex-col">
+        
+        {/* Header */}
+        <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-6 py-5.5">
+            <div className="flex items-center gap-3">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Upload Transactions
+                </h1>
               </div>
+            </div>
+          </div>
+        </header>
 
-              {/* Selected File */}
-              {file && (
-                <div className="mt-6 bg-linear-to-r from-emerald-50 to-teal-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-4 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#7ECBAA] flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-white" />
+        {/* Main Content Area */}
+        <main className="flex-1 p-6 overflow-auto">
+          <div className="max-w-3xl mx-auto">
+            {/* Upload Card */}
+            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-gray-100 dark:border-gray-700 overflow-hidden">
+              <div className="p-8 md:p-10">
+                {/* Drag and Drop Zone */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`relative border-3 border-dashed rounded-2xl p-16 transition-all duration-300 ${
+                    isDragging
+                      ? 'border-[#7AD1A6] bg-linear-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 scale-[1.02]'
+                      : 'border-gray-300 dark:border-gray-600 hover:border-[#7AD1A6]/50 dark:hover:border-[#7AD1A6]/50 hover:bg-gray-50/50 dark:hover:bg-gray-700/30'
+                  }`}
+                >
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    aria-label="Upload CSV file"
+                  />
+
+                  <div className="text-center pointer-events-none">
+                    <div className="mb-6 flex justify-center">
+                      <div className={`w-20 h-20 rounded-2xl bg-linear-to-br from-[#90A1B9] to-[#7AD1A6] flex items-center justify-center shadow-xl transition-transform duration-300 ${
+                        isDragging ? 'scale-110' : 'scale-100'
+                      }`}>
+                        <Upload className="w-10 h-10 text-white" />
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {file.name}
+
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                      {isDragging ? 'Drop your file here!' : 'Drag & drop your CSV file'}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                      or <span className="text-[#7AD1A6] font-semibold">click to browse</span> from your computer
+                    </p>
+                    
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700/50 rounded-full">
+                      <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                        Supported format: CSV files only
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Selected File Preview */}
+                {file && (
+                  <div className="mt-6 animate-in slide-in-from-top-2 duration-300">
+                    <div className="bg-linear-to-r from-emerald-50 via-teal-50 to-cyan-50 dark:from-gray-700 dark:via-gray-700 dark:to-gray-600 rounded-2xl p-5 border-2 border-[#7AD1A6]/30 dark:border-[#7AD1A6]/30">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className="w-12 h-12 rounded-xl bg-linear-to-br from-[#90A1B9] to-[#7AD1A6] flex items-center justify-center shadow-lg shrink-0">
+                            <FileText className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 dark:text-white truncate">
+                              {file.name}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">
+                              {(file.size / 1024).toFixed(2)} KB • Ready to upload
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={clearFile}
+                          className="p-2.5 rounded-xl hover:bg-white/70 dark:hover:bg-gray-600 transition-all duration-200 active:scale-95 shrink-0 ml-2"
+                          aria-label="Remove file"
+                        >
+                          <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Status Message */}
+                {message && (
+                  <div
+                    className={`mt-6 rounded-2xl p-5 flex items-start gap-3 animate-in slide-in-from-top-2 duration-300 border-2 ${
+                      uploadStatus === 'success'
+                        ? 'bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-300 dark:border-green-700'
+                        : 'bg-linear-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-red-300 dark:border-red-700'
+                    }`}
+                  >
+                    <div className="shrink-0">
+                      {uploadStatus === 'success' ? (
+                        <div className="w-8 h-8 rounded-full bg-linear-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                          <CheckCircle className="w-5 h-5 text-white" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-linear-to-br from-red-500 to-rose-500 flex items-center justify-center">
+                          <AlertCircle className="w-5 h-5 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-sm font-semibold mb-0.5 ${
+                        uploadStatus === 'success' 
+                          ? 'text-green-900 dark:text-green-100' 
+                          : 'text-red-900 dark:text-red-100'
+                      }`}>
+                        {uploadStatus === 'success' ? 'Upload Successful!' : 'Upload Failed'}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        {(file.size / 1024).toFixed(2)} KB
+                      <p className={`text-sm ${
+                        uploadStatus === 'success' 
+                          ? 'text-green-700 dark:text-green-200' 
+                          : 'text-red-700 dark:text-red-200'
+                      }`}>
+                        {message}
                       </p>
                     </div>
                   </div>
+                )}
+
+                {/* Upload Button */}
+                <div className="mt-8">
                   <button
-                    onClick={clearFile}
-                    className="p-2 rounded-lg hover:bg-white dark:hover:bg-gray-700 transition"
+                    onClick={uploadCsv}
+                    disabled={!file || uploading}
+                    className={`group w-full py-4 rounded-xl font-semibold text-white transition-all duration-200 shadow-lg ${
+                      !file || uploading
+                        ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed opacity-60'
+                        : 'bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] hover:shadow-xl hover:shadow-[#7AD1A6]/25 active:scale-[0.98] hover:-translate-y-0.5'
+                    }`}
                   >
-                    <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                    <span className="flex items-center justify-center gap-2">
+                      {uploading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+                          Upload CSV File
+                        </>
+                      )}
+                    </span>
                   </button>
                 </div>
-              )}
+              </div>
 
-              {/* Status Message */}
-              {message && (
-                <div
-                  className={`mt-6 rounded-xl p-4 flex items-start space-x-3 ${
-                    uploadStatus === 'success'
-                      ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                      : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
-                  }`}
-                >
-                  {uploadStatus === 'success' ? (
-                    <CheckCircle className="w-5 h-5 text-[#7ECBAA] dark:text-[#65a187] mt-0.5" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
-                  )}
-                  <p className="text-sm font-medium">{message}</p>
+              {/* Footer Info */}
+              <div className="bg-linear-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 px-8 md:px-10 py-5 border-t-2 border-gray-200 dark:border-gray-700">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                    <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+                      File Requirements
+                    </p>
+                    <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                        First row must contain column headers
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                        Maximum file size: 10MB
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                        CSV format with comma-separated values
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-              )}
-
-              {/* Upload Button */}
-              <div className="mt-8">
-                <button
-                  onClick={uploadCsv}
-                  disabled={!file || uploading}
-                  className={`w-full py-4 rounded-xl font-semibold text-white transition-all ${
-                    !file || uploading
-                      ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
-                      : 'bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] hover:from-[#7B8CA5] hover:to-[#5BB88A] '
-                  }`}
-                >
-                  {uploading ? 'Uploading...' : 'Upload CSV File'}
-                </button>
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 px-8 py-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-start space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                <AlertCircle className="w-4 h-4 mt-0.5" />
-                <p>
-                  Ensure your CSV file has headers in the first row. Max size: 10MB.
-                </p>
-              </div>
+            {/* Quick Tips Card */}
+            <div className="mt-6 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-linear-to-br from-[#90A1B9] to-[#7AD1A6] flex items-center justify-center">
+                  <span className="text-white text-xs">💡</span>
+                </div>
+                Quick Tips
+              </h4>
+              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="text-[#7AD1A6] font-bold mt-0.5">•</span>
+                  <span>Export your bank statements as CSV for best compatibility</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#7AD1A6] font-bold mt-0.5">•</span>
+                  <span>Ensure dates are in a consistent format (YYYY-MM-DD recommended)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#7AD1A6] font-bold mt-0.5">•</span>
+                  <span>Remove any special characters or formatting from your file</span>
+                </li>
+              </ul>
             </div>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
