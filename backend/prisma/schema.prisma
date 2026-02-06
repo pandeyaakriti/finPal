@@ -23,7 +23,7 @@ model User {
   expenses  Expense[]
   incomes   Income[]
   transactions Transactions[]
-  
+  budgets  Budget[]
 }
 
 model Expense {
@@ -34,6 +34,7 @@ model Expense {
   category  String
   remark    String?
   date      DateTime @default(now())
+  createdAt DateTime @default(now())
   
   @@index([userId])
 }
@@ -46,6 +47,7 @@ model Income {
   source    String
   remark    String?
   date      DateTime @default(now())
+  createdAt DateTime @default(now())
   
   @@index([userId])
 }
@@ -79,7 +81,23 @@ model Transactions {
   @@index([userId])
   @@index([usedForTraining])
 }
-
+model Budget {
+  id        Int      @id @default(autoincrement())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  
+  category  String   
+  
+  // Target amount for this category
+  targetAmount Float
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, category])
+  @@index([userId])
+}
 
 model RetrainingJob {
   id                  String   @id @default(cuid())

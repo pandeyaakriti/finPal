@@ -46,6 +46,7 @@ app.use("/api/charts", require("./routes/charts").default);
 app.use("/api/ai-labeling", aiLabelingRoutes);
 app.use("/uploads", express.static('uploads'));
 app.use("/api/retraining", retrainingRoutes);
+app.use("/budgets", require("./routes/budgets").default);
 //app.use("/api/transactions", require("./routes/transactions").default);
 // Health check
 app.get("/health", (req, res) => res.send({ status: "OK" }));

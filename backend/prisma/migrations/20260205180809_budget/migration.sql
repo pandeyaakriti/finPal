@@ -19,6 +19,7 @@ CREATE TABLE "Expense" (
     "category" TEXT NOT NULL,
     "remark" TEXT,
     "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Expense_pkey" PRIMARY KEY ("id")
 );
@@ -31,6 +32,7 @@ CREATE TABLE "Income" (
     "source" TEXT NOT NULL,
     "remark" TEXT,
     "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Income_pkey" PRIMARY KEY ("id")
 );
@@ -53,6 +55,18 @@ CREATE TABLE "Transactions" (
     "usedForTraining" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "Transactions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Budget" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "category" TEXT NOT NULL,
+    "targetAmount" DOUBLE PRECISION NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Budget_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -92,6 +106,12 @@ CREATE INDEX "Transactions_userId_idx" ON "Transactions"("userId");
 CREATE INDEX "Transactions_usedForTraining_idx" ON "Transactions"("usedForTraining");
 
 -- CreateIndex
+CREATE INDEX "Budget_userId_idx" ON "Budget"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Budget_userId_category_key" ON "Budget"("userId", "category");
+
+-- CreateIndex
 CREATE INDEX "RetrainingJob_status_idx" ON "RetrainingJob"("status");
 
 -- AddForeignKey
@@ -102,3 +122,6 @@ ALTER TABLE "Income" ADD CONSTRAINT "Income_userId_fkey" FOREIGN KEY ("userId") 
 
 -- AddForeignKey
 ALTER TABLE "Transactions" ADD CONSTRAINT "Transactions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Budget" ADD CONSTRAINT "Budget_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
