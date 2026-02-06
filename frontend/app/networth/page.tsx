@@ -1,3 +1,4 @@
+//frontend/app/networth/page.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
@@ -206,59 +207,12 @@ export default function NetWorthPage() {
         </header>
 
         <main className="max-w-7xl mx-auto w-full px-6 py-8 space-y-6">
-          
           {/* Charts Row */}
           {predictions.categoryBreakdown && predictions.monthlyTrend && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Category Breakdown Pie Chart */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-linear-to-br from-[#90A1B9]/10 to-[#7AD1A6]/10 rounded-lg">
-                    <PieChartIcon className="w-5 h-5 text-[#5B6F70]" />
-                  </div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                    Expense Distribution
-                  </h2>
-                </div>
-                
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={predictions.categoryBreakdown}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {predictions.categoryBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-
-                <div className="mt-6 grid grid-cols-2 gap-3">
-                  {predictions.categoryBreakdown.map((category, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: category.color }}
-                      />
-                      <span className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {category.name}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
+            <div className="grid grid-cols-1  gap-6">
               {/* Monthly Trend Line Chart */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-3 mb-6">
+                <div className=" mb-8 flex items-center gap-3">
                   <div className="p-2 bg-linear-to-br from-[#90A1B9]/10 to-[#7AD1A6]/10 rounded-lg">
                     <TrendingUp className="w-5 h-5 text-[#5B6F70]" />
                   </div>
