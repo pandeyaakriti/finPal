@@ -76,11 +76,11 @@ async function getLast6Months(userId: number): Promise<MonthlyData[]> {
     orderBy: { createdAt: "asc" },
   });
 
-  // Group by month
+  // Group by month use uploadMonth if available, otherwise use createdAt
   const monthlyMap = new Map<string, { income: number; expenses: number }>();
 
   transactions.forEach((tx) => {
-    const monthKey = new Date(tx.createdAt).toISOString().slice(0, 7); // YYYY-MM
+    const monthKey = (tx.uploadMonth || new Date(tx.createdAt).toISOString().slice(0, 7)); // YYYY-MM
     
     if (!monthlyMap.has(monthKey)) {
       monthlyMap.set(monthKey, { income: 0, expenses: 0 });
@@ -251,7 +251,7 @@ async function getCategoryBreakdown(userId: number): Promise<{ name: string; val
     where: {
       userId,
       amountMinus: { gt: 0 },
-      createdAt: { gte: oneMonthAgo },
+      createdAt: { gte: oneMonthAgo }, 
     },
   });
 

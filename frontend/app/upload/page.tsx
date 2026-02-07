@@ -10,8 +10,9 @@ export default function CsvUploadPage() {
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [selectedMonth, setSelectedMonth] = useState('');
 
+  // Generate month options (last 12 months + next 1 month)
   const generateMonthOptions = () => {
     const options = [];
     const today = new Date();
@@ -35,7 +36,6 @@ export default function CsvUploadPage() {
   };
 
   const monthOptions = generateMonthOptions();
-
 
   const handleFileChange = (selectedFile: File | null) => {
     if (selectedFile && selectedFile.type === 'text/csv') {
@@ -79,6 +79,11 @@ export default function CsvUploadPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      
+      // Only add uploadMonth if user selected one (optional)
+      if (selectedMonth) {
+        formData.append('uploadMonth', selectedMonth);
+      }
 
       // Get token from localStorage
       const token = localStorage.getItem('token');
@@ -105,6 +110,7 @@ export default function CsvUploadPage() {
         setMessage(data.message || 'CSV uploaded successfully!');
         setTimeout(() => {
           setFile(null);
+          setSelectedMonth('');
           setUploadStatus('idle');
           setMessage('');
         }, 3000);
@@ -152,12 +158,13 @@ export default function CsvUploadPage() {
             {/* Upload Card */}
             <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-gray-100 dark:border-gray-700 overflow-hidden">
               <div className="p-8 md:p-10">
+                
                 {/* Month Selector */}
                 <div className="mb-8">
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-5 h-5 text-[#7AD1A6]" />
-                      <span>Select Transaction Month</span>
+                      <span>Select Transaction Month <span className="text-gray-400 font-normal">(Optional)</span></span>
                     </div>
                   </label>
                   <select
@@ -165,7 +172,7 @@ export default function CsvUploadPage() {
                     onChange={(e) => setSelectedMonth(e.target.value)}
                     className="w-full px-4 py-3.5 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium focus:border-[#7AD1A6] focus:ring-2 focus:ring-[#7AD1A6]/20 outline-none transition-all duration-200"
                   >
-                    <option value="">Choose the month...</option>
+                    <option value="">Skip - Use current date</option>
                     {monthOptions.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
@@ -173,7 +180,7 @@ export default function CsvUploadPage() {
                     ))}
                   </select>
                   <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    This helps organize your transactions and improve forecast accuracy
+                    Recommended for historical data - helps organize transactions and improve forecast accuracy
                   </p>
                 </div>
 
@@ -235,7 +242,7 @@ export default function CsvUploadPage() {
                               {file.name}
                             </p>
                             <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">
-                              {(file.size / 1024).toFixed(2)} KB • Ready to upload {selectedMonth ? `for ${monthOptions.find(opt => opt.value === selectedMonth)?.label}` : 'month not selected'}
+                              {(file.size / 1024).toFixed(2)} KB • {selectedMonth ? `For ${monthOptions.find(m => m.value === selectedMonth)?.label}` : 'Month not selected'}
                             </p>
                           </div>
                         </div>
@@ -295,78 +302,57 @@ export default function CsvUploadPage() {
                   <button
                     onClick={uploadCsv}
                     disabled={!file || uploading}
-                    className={`group w-full py-4 rounded-xl font-semibold text-white transition-all duration-200 shadow-lg ${
+                    className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 shadow-lg ${
                       !file || uploading
-                        ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed opacity-60'
-                        : 'bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] hover:shadow-xl hover:shadow-[#7AD1A6]/25 active:scale-[0.98] hover:-translate-y-0.5'
+                        ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                        : 'bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] text-white hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98]'
                     }`}
                   >
-                    <span className="flex items-center justify-center gap-2">
-                      {uploading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
-                          Upload CSV File
-                        </>
-                      )}
-                    </span>
+                    {uploading ? (
+                      <span className="flex items-center justify-center gap-3">
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Uploading...
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center gap-2">
+                        <Upload className="w-5 h-5" />
+                        Upload Transactions
+                      </span>
+                    )}
                   </button>
-                </div>
-              </div>
-
-              {/* Footer Info */}
-              <div className="bg-linear-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 px-8 md:px-10 py-5 border-t-2 border-gray-200 dark:border-gray-700">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                    <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-                      File Requirements
+                  
+                  {!selectedMonth && file && (
+                    <p className="mt-3 text-center text-sm text-blue-600 dark:text-blue-400 font-medium">
+                      💡 Tip: Select a month for better forecast accuracy (optional)
                     </p>
-                    <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                      <li className="flex items-center gap-2">
-                        <div className="w-1 h-1 rounded-full bg-gray-400"></div>
-                        First row must contain column headers
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <div className="w-1 h-1 rounded-full bg-gray-400"></div>
-                        Maximum file size: 10MB
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <div className="w-1 h-1 rounded-full bg-gray-400"></div>
-                        CSV format with comma-separated values
-                      </li>
-                    </ul>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Quick Tips Card */}
-            <div className="mt-6 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-              <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-linear-to-br from-[#90A1B9] to-[#7AD1A6] flex items-center justify-center">
-                  <span className="text-white text-xs">💡</span>
-                </div>
-                Quick Tips
-              </h4>
-              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+            {/* Info Card */}
+            <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-800">
+              <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                When to specify the month?
+              </h3>
+              <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
                 <li className="flex items-start gap-2">
-                  <span className="text-[#7AD1A6] font-bold mt-0.5">•</span>
-                  <span>Export your bank statements as CSV for best compatibility</span>
+                  <span className="text-[#7AD1A6] mt-1">•</span>
+                  <span><strong>Current month data:</strong> Skip month selection - it will use today's date</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-[#7AD1A6] font-bold mt-0.5">•</span>
-                  <span>Ensure dates are in a consistent format (YYYY-MM-DD recommended)</span>
+                  <span className="text-[#7AD1A6] mt-1">•</span>
+                  <span><strong>Historical data:</strong> Select the actual month to build accurate trends</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-[#7AD1A6] font-bold mt-0.5">•</span>
-                  <span>Remove any special characters or formatting from your file</span>
+                  <span className="text-[#7AD1A6] mt-1">•</span>
+                  <span><strong>Multiple months:</strong> Upload separately with correct month for each CSV</span>
                 </li>
               </ul>
             </div>

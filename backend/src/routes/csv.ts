@@ -25,6 +25,15 @@ router.post("/upload-csv", authMiddleware, upload.single("file"), async (req, re
     return res.status(401).json({ message: "Unauthorized - User not authenticated" });
   }
 
+   // Get the selected month from request body
+  const uploadMonth = req.body.uploadMonth; // Format: "2024-12" or "2025-01"
+  
+  if (!uploadMonth || !/^\d{4}-\d{2}$/.test(uploadMonth)) {
+    fs.unlinkSync(req.file.path);
+    return res.status(400).json({ 
+      message: "Valid upload month is required (format: YYYY-MM)" 
+    });
+  }
 
   const rows: {
     userId: number;
@@ -32,6 +41,8 @@ router.post("/upload-csv", authMiddleware, upload.single("file"), async (req, re
     amountPlus: number;
     amountMinus: number;
     balance: number;
+    uploadMonth: string; // Store the month for which the transactions are uploaded
+    createdAt: Date; // Store the original transaction date if available
   }[] = [];
 
   const REQUIRED_HEADERS = [
@@ -47,6 +58,8 @@ router.post("/upload-csv", authMiddleware, upload.single("file"), async (req, re
   let headersValidated = false;
 
   try {
+    const [year, month] = uploadMonth.split('-'); // Extract year and month from the uploadMonth string
+    const baseDate = new Date(parseInt(year), parseInt(month) - 1, 1);
     fs.createReadStream(req.file.path)
       .pipe(csv())
       .on("headers", (headers) => {
@@ -71,13 +84,19 @@ router.post("/upload-csv", authMiddleware, upload.single("file"), async (req, re
         const balance = safeParse(row["Balance"]);
 
         if (isNaN(balance)) return;
+        //set createdAt date based on row index to ensure unique dates for each transaction, while keeping them within the same month
+        const dayOffset = rows.length % 28; // Stay within valid days
+        const transactionDate = new Date(baseDate);
+        transactionDate.setDate(dayOffset + 1);
 
         rows.push({
           userId,
           remarks: row["Remarks"]?.trim() || null,
           amountPlus: isNaN(amountPlus) ? 0 : amountPlus,
           amountMinus: isNaN(amountMinus) ? 0 : amountMinus,
-          balance,
+          balance : balance,
+          uploadMonth : uploadMonth, 
+          createdAt: transactionDate,
         });
       })
       .on("end", async () => {
@@ -115,7 +134,8 @@ router.post("/upload-csv", authMiddleware, upload.single("file"), async (req, re
           // Send response immediately
           res.json({
             message: `Uploaded ${rows.length} transactions successfully. AI labeling in progress...`,
-            count: rows.length
+            count: rows.length,
+            uploadMonth: uploadMonth
           });
           
         } catch (error) {
