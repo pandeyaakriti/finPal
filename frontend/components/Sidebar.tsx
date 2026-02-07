@@ -7,11 +7,9 @@ const menuItems = [
   { name: 'Overview', href: '/dashboard' },
   { name: 'Transactions', href: '/transactions' },
   { name: 'Budgets', href: '/budgets' },
-  { name: 'Debts', href: '/debts' },
   { name: 'Charts', href: '/charts' },
   { name: 'Net Worth Prediction', href: '/networth' },
   { name: 'Upload', href: '/upload' },
-  { name: 'Synchronization', href: '/sync' },
 ];
 
 export default function Sidebar({ headerTitle }: { headerTitle?: string }) {
