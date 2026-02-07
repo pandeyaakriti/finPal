@@ -256,7 +256,7 @@ export default function Dashboard() {
               {/* Total Expenses */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-linear-to-br from-red-500 to-red-600 rounded-xl">
+                  <div className="p-3 bg-red-400 rounded-xl">
                     <TrendingDown className="w-6 h-6 text-white" />
                   </div>
                   <span className="text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 px-2 py-1 rounded-full font-medium">

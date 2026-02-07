@@ -298,10 +298,10 @@ export default function Budgets() {
                     Budget Usage Overview
                   </h2>
                   
-                  <ResponsiveContainer width="100%" height={400}>
+                  <ResponsiveContainer width="100%" height={600}>
                     <RadarChart data={categoryRadarData}>
                       <PolarGrid stroke="#E5E7EB" />
-                      <PolarAngleAxis dataKey="category" style={{ fontSize: '12px' }} />
+                      <PolarAngleAxis dataKey="category" style={{ fontSize: '18px' }} />
                       <PolarRadiusAxis angle={90} domain={[0, 100]} />
                       <Radar name="Usage %" dataKey="usage" stroke="#5B6F70" fill="#7AD1A6" fillOpacity={0.6} />
                       <Tooltip />
