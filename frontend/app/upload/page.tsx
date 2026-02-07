@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Upload, FileText, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle, X, Calendar } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 
 export default function CsvUploadPage() {
@@ -10,6 +10,32 @@ export default function CsvUploadPage() {
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
+
+  const generateMonthOptions = () => {
+    const options = [];
+    const today = new Date();
+    
+    // Add next month
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    options.push({
+      value: `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`,
+      label: nextMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    });
+    
+    // Add current and past 11 months
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      options.push({ value, label });
+    }
+    
+    return options;
+  };
+
+  const monthOptions = generateMonthOptions();
+
 
   const handleFileChange = (selectedFile: File | null) => {
     if (selectedFile && selectedFile.type === 'text/csv') {
@@ -126,6 +152,31 @@ export default function CsvUploadPage() {
             {/* Upload Card */}
             <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-gray-100 dark:border-gray-700 overflow-hidden">
               <div className="p-8 md:p-10">
+                {/* Month Selector */}
+                <div className="mb-8">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-[#7AD1A6]" />
+                      <span>Select Transaction Month</span>
+                    </div>
+                  </label>
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="w-full px-4 py-3.5 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium focus:border-[#7AD1A6] focus:ring-2 focus:ring-[#7AD1A6]/20 outline-none transition-all duration-200"
+                  >
+                    <option value="">Choose the month...</option>
+                    {monthOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    This helps organize your transactions and improve forecast accuracy
+                  </p>
+                </div>
+
                 {/* Drag and Drop Zone */}
                 <div
                   onDragOver={handleDragOver}
@@ -184,7 +235,7 @@ export default function CsvUploadPage() {
                               {file.name}
                             </p>
                             <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">
-                              {(file.size / 1024).toFixed(2)} KB • Ready to upload
+                              {(file.size / 1024).toFixed(2)} KB • Ready to upload {selectedMonth ? `for ${monthOptions.find(opt => opt.value === selectedMonth)?.label}` : 'month not selected'}
                             </p>
                           </div>
                         </div>

@@ -51,6 +51,7 @@ CREATE TABLE "Transactions" (
     "correctedLabel" TEXT,
     "confidence" DOUBLE PRECISION,
     "source" TEXT NOT NULL DEFAULT 'AI',
+    "uploadMonth" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "usedForTraining" BOOLEAN NOT NULL DEFAULT false,
 
@@ -101,6 +102,9 @@ CREATE INDEX "Income_userId_idx" ON "Income"("userId");
 
 -- CreateIndex
 CREATE INDEX "Transactions_userId_idx" ON "Transactions"("userId");
+
+-- CreateIndex
+CREATE INDEX "Transactions_userId_uploadMonth_idx" ON "Transactions"("userId", "uploadMonth");
 
 -- CreateIndex
 CREATE INDEX "Transactions_usedForTraining_idx" ON "Transactions"("usedForTraining");

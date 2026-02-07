@@ -73,12 +73,13 @@ model Transactions {
   confidence       Float?
 
   source           String   @default("AI") // AI | MANUAL
-
+  uploadMonth      String?
   createdAt        DateTime @default(now())
 
   usedForTraining Boolean @default(false)
 
   @@index([userId])
+  @@index([userId, uploadMonth])
   @@index([usedForTraining])
 }
 model Budget {

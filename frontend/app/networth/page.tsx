@@ -341,7 +341,7 @@ export default function NetWorthPage() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-3">
               <Brain className="w-5 h-5 text-[#5B6F70]" />
-              AI Insights
+             Financial Health Insights
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6">
