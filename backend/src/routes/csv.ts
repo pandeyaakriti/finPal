@@ -26,7 +26,7 @@ router.post("/upload-csv", authMiddleware, upload.single("file"), async (req, re
   }
 
    // Get the selected month from request body
-  const uploadMonth = req.body.uploadMonth; // Format: "2024-12" or "2025-01"
+  const uploadMonth = req.body.uploadMonth || null; // Format: "2024-12" or "2025-01" or null
   
   if (!uploadMonth || !/^\d{4}-\d{2}$/.test(uploadMonth)) {
     fs.unlinkSync(req.file.path);
@@ -95,7 +95,7 @@ router.post("/upload-csv", authMiddleware, upload.single("file"), async (req, re
           amountPlus: isNaN(amountPlus) ? 0 : amountPlus,
           amountMinus: isNaN(amountMinus) ? 0 : amountMinus,
           balance : balance,
-          uploadMonth : uploadMonth, 
+          uploadMonth, 
           createdAt: transactionDate,
         });
       })
