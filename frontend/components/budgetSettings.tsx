@@ -1,7 +1,7 @@
 // frontend/components/BudgetSettings.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
-import { X, Save, DollarSign } from 'lucide-react';
+import { X, Save} from 'lucide-react';
 import { getBudgets, bulkUpdateBudgets } from '@/lib/budgetApi';
 
 interface BudgetSettingsProps {
@@ -38,7 +38,7 @@ export default function BudgetSettings({ isOpen, onCloseAction, onSaveAction }: 
       
       // Initialize all categories with 0
       DEFAULT_CATEGORIES.forEach(category => {
-        budgetMap[category] = '0';
+        budgetMap[category] = '';
       });
       
       // Override with user's actual budgets
@@ -127,7 +127,10 @@ export default function BudgetSettings({ isOpen, onCloseAction, onSaveAction }: 
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <DollarSign className="w-5 h-5 text-[#90A1B9] dark:text-[#7AD1A6]" />
+                      <span className="text-lg font-semibold text-[#90A1B9] dark:text-[#7AD1A6]">
+                        ₹
+                    </span>
+
                     </div>
                     <input
                       type="text"
@@ -157,7 +160,10 @@ export default function BudgetSettings({ isOpen, onCloseAction, onSaveAction }: 
                     </p>
                   </div>
                   <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-[#90A1B9] to-[#7AD1A6] flex items-center justify-center">
-                    <DollarSign className="w-8 h-8 text-white" />
+                    <span className="text-lg font-semibold text-[#90A1B9] dark:text-[#7AD1A6]">
+                      ₹
+                    </span>
+
                   </div>
                 </div>
               </div>

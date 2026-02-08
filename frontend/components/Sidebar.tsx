@@ -16,9 +16,20 @@ export default function Sidebar({ headerTitle }: { headerTitle?: string }) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 h-screen bg-[#16202A] text-white flex flex-col sticky top-0 left-0">
+    <aside className="
+      w-64 h-screen flex flex-col sticky top-0 left-0
+      bg-white text-gray-900
+      dark:bg-[#16202A] dark:text-white
+      border-r border-gray-200 dark:border-white/10
+    ">
       {/* Header */}
-      <div className="px-6 py-5.5 text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] border-b border-white/10 shrink-0">
+      <div className="
+        px-6 py-5.5 text-2xl font-bold
+        text-transparent bg-clip-text
+        bg-linear-to-r from-[#90A1B9] to-[#7AD1A6]
+        border-b border-gray-200 dark:border-white/10
+        shrink-0
+      ">
         finPal
       </div>
 
@@ -31,11 +42,20 @@ export default function Sidebar({ headerTitle }: { headerTitle?: string }) {
             <Link
               key={item.name}
               href={item.href}
-              className={`block px-4 py-3 rounded-xl transition-all ${
-                isActive
-                  ? 'bg-linear-to-r from-[#90A1B9] to-[#7AD1A6] text-white font-semibold'
-                  : 'text-gray-300 hover:bg-white/10'
-              }`}
+              className={`
+                block px-4 py-3 rounded-xl transition-all
+                ${
+                  isActive
+                    ? `
+                      bg-linear-to-r from-[#90A1B9] to-[#7AD1A6]
+                      text-white font-semibold
+                    `
+                    : `
+                      text-gray-600 hover:bg-gray-100
+                      dark:text-gray-300 dark:hover:bg-white/10
+                    `
+                }
+              `}
             >
               {item.name}
             </Link>
