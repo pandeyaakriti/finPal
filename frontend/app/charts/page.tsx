@@ -72,14 +72,19 @@ export default function Charts() {
 
         setCategoryData(formattedCategoryData);
 
-        // Format monthly data
+        /* Format monthly data
+
+
+
+        */
+        
         const formattedMonthlyData = Object.entries(byMonth)
           .map(([month, data]) => ({ 
-            month: month.split(' ')[0], // Just the month name
+            month: month.split(' ')[0], 
             expenses: Number(data.expenses.toFixed(2)),
-            income: 0 // You can add income data if available
+            income: 0 
           }))
-          .slice(-6); // Last 6 months
+          .slice(-6);
 
         setMonthlyData(formattedMonthlyData);
         setTrendData(formattedMonthlyData.map(d => ({ month: d.month, amount: d.expenses })));
