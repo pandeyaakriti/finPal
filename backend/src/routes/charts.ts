@@ -2,11 +2,11 @@ import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { authMiddleware } from "../middleware/auth";
 
-const router = Router();
 const prisma = new PrismaClient();
+const router = Router();
 
-// Get all expense transactions for charts (filtered by user)
-router.get("/", authMiddleware, async (req: any, res) => {
+// Handler function moved above the route definition
+const getExpenseTransactions = async (req: any, res: any) => {
   try {
     const userId = req.userId;
 
@@ -26,22 +26,29 @@ router.get("/", authMiddleware, async (req: any, res) => {
         createdAt: true
       },
       orderBy: {
-        createdAt: 'asc'
+        createdAt: "asc"
       }
     });
 
-    // Map data to use correctedLabel if available, otherwise predictedLabel
     const formattedData = data.map(transaction => ({
       amountMinus: transaction.amountMinus,
-      predictedLabel: transaction.correctedLabel || transaction.predictedLabel || 'Uncategorized',
+      predictedLabel:
+        transaction.correctedLabel ||
+        transaction.predictedLabel ||
+        "Uncategorized",
       createdAt: transaction.createdAt
     }));
 
     res.json(formattedData);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to fetch transactions for charts" });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch transactions for charts" });
   }
-});
+};
+
+// Route definition moved below
+router.get("/", authMiddleware, getExpenseTransactions);
 
 export default router;
