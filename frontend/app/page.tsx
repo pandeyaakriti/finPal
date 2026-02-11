@@ -55,6 +55,7 @@ export default function Page() {
               <br />
               <span className="text-gray-900">That Learns & Adapts</span>
             </h1>
+
             
             <p className="text-gray-600 text-lg sm:text-xl max-w-3xl mx-auto mb-12 leading-relaxed">
               finPal autonomously analyzes your spending, detects emotional patterns,
@@ -76,6 +77,8 @@ export default function Page() {
                 See How It Works
               </button>
             </div>
+
+          
           </div>
         </div>
       </section>
@@ -102,62 +105,62 @@ export default function Page() {
               <div className="bg-linear-to-br from-gray-50 to-gray-100 group-hover:from-[#90A1B9] group-hover:to-[#7AD1A6] w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-all">
               <Brain className="w-7 h-7 text-gray-700 group-hover:text-gray-700 transition-colors" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
                   Perceive
                 </h3>
-                <p className="text-gray-500 text-sm leading-relaxed">
+                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
                   Ingests transaction data from eSewa, Khalti, and digital wallets
                 </p>
               </div>
 
               {/* Reason */}
-              <div className="bg-white rounded-2xl shadow-md hover:shadow-xl p-6 border border-gray-100 hover:border-[#90A1B9]/30 transition-all group">
-              <div className="bg-linear-to-br from-gray-50 to-gray-100 group-hover:from-[#90A1B9] group-hover:to-[#7AD1A6] w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-all">
-              <TrendingUp className="w-7 h-7 text-gray-700 group-hover:text-gray-700 transition-colors" />
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-xl p-6 border border-gray-100 dark:border-gray-700 hover:border-[#90A1B9]/30 dark:hover:border-[#90A1B9]/50 transition-all group">
+                <div className="bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 group-hover:from-[#90A1B9] group-hover:to-[#7AD1A6] w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-all">
+                  <TrendingUp className="w-7 h-7 text-gray-700 dark:text-gray-200 group-hover:text-white transition-colors" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
                   Reason
                 </h3>
-                <p className="text-gray-500 text-sm leading-relaxed">
+                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
                   Classifies expenses and detects spending patterns automatically
                 </p>
               </div>
 
               {/* Plan */}
-              <div className="bg-white rounded-2xl shadow-md hover:shadow-xl p-6 border border-gray-100 hover:border-[#90A1B9]/30 transition-all group">
-              <div className="bg-linear-to-br from-gray-50 to-gray-100 group-hover:from-[#90A1B9] group-hover:to-[#7AD1A6] w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-all">
-              <Target className="w-7 h-7 text-gray-700 group-hover:text-gray-700 transition-colors" />
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-xl p-6 border border-gray-100 dark:border-gray-700 hover:border-[#90A1B9]/30 dark:hover:border-[#90A1B9]/50 transition-all group">
+                <div className="bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 group-hover:from-[#90A1B9] group-hover:to-[#7AD1A6] w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-all">
+                  <Target className="w-7 h-7 text-gray-700 dark:text-gray-200 group-hover:text-white transition-colors" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
                   Plan
                 </h3>
-                <p className="text-gray-500 text-sm leading-relaxed">
+                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
                   Calculates optimized budgets aligned with your goals
                 </p>
               </div>
 
               {/* Act */}
-              <div className="bg-white rounded-2xl shadow-md hover:shadow-xl p-6 border border-gray-100 hover:border-[#90A1B9]/30 transition-all group">
-              <div className="bg-linear-to-br from-gray-50 to-gray-100 group-hover:from-[#90A1B9] group-hover:to-[#7AD1A6] w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-all">
-              <Zap className="w-7 h-7 text-gray-700 group-hover:text-gray-700 transition-colors" />
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-xl p-6 border border-gray-100 dark:border-gray-700 hover:border-[#90A1B9]/30 dark:hover:border-[#90A1B9]/50 transition-all group">
+                <div className="bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 group-hover:from-[#90A1B9] group-hover:to-[#7AD1A6] w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-all">
+                  <Zap className="w-7 h-7 text-gray-700 dark:text-gray-200 group-hover:text-white transition-colors" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
                   Act
                 </h3>
-                <p className="text-gray-500 text-sm leading-relaxed">
+                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
                   Generates insights, alerts, and next-month recommendations
                 </p>
               </div>
 
               {/* Reflect */}
-              <div className="bg-white rounded-2xl shadow-md hover:shadow-xl p-6 border border-gray-100 hover:border-[#90A1B9]/30 transition-all group">
-              <div className="bg-linear-to-br from-gray-50 to-gray-100 group-hover:from-[#90A1B9] group-hover:to-[#7AD1A6] w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-all">
-                <Brain className="w-7 h-7 text-gray-700 group-hover:text-gray-700 transition-colors" />
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-xl p-6 border border-gray-100 dark:border-gray-700 hover:border-[#90A1B9]/30 dark:hover:border-[#90A1B9]/50 transition-all group">
+                <div className="bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 group-hover:from-[#90A1B9] group-hover:to-[#7AD1A6] w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-all">
+                  <Brain className="w-7 h-7 text-gray-700 dark:text-gray-200 group-hover:text-white transition-colors" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
                   Reflect
                 </h3>
-                <p className="text-gray-500 text-sm leading-relaxed">
+                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
                   Adapts logic based on feedback and new trends
                 </p>
               </div>

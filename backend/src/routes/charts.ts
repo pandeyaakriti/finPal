@@ -2,11 +2,15 @@ import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { authMiddleware } from "../middleware/auth";
 
-const router = Router();
 const prisma = new PrismaClient();
+const router = Router();
 
-// Get all expense transactions for charts (filtered by user)
-router.get("/", authMiddleware, async (req: any, res) => {
+<<<<<<< HEAD
+// Handler function moved above the route definition
+=======
+
+>>>>>>> 7f6ec91e73e96207f9ccad91240a9043edc8fcdf
+const getExpenseTransactions = async (req: any, res: any) => {
   try {
     const userId = req.userId;
 
@@ -26,22 +30,37 @@ router.get("/", authMiddleware, async (req: any, res) => {
         createdAt: true
       },
       orderBy: {
-        createdAt: 'asc'
+        createdAt: "asc"
       }
     });
+<<<<<<< HEAD
 
-    // Map data to use correctedLabel if available, otherwise predictedLabel
+=======
+// Map data to use correctedLabel if available, otherwise predictedLabel
+>>>>>>> 7f6ec91e73e96207f9ccad91240a9043edc8fcdf
     const formattedData = data.map(transaction => ({
       amountMinus: transaction.amountMinus,
-      predictedLabel: transaction.correctedLabel || transaction.predictedLabel || 'Uncategorized',
+      predictedLabel:
+        transaction.correctedLabel ||
+        transaction.predictedLabel ||
+        "Uncategorized",
       createdAt: transaction.createdAt
     }));
 
     res.json(formattedData);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to fetch transactions for charts" });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch transactions for charts" });
   }
-});
+};
+
+<<<<<<< HEAD
+// Route definition moved below
+=======
+
+>>>>>>> 7f6ec91e73e96207f9ccad91240a9043edc8fcdf
+router.get("/", authMiddleware, getExpenseTransactions);
 
 export default router;

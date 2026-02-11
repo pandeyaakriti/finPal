@@ -4,19 +4,46 @@ import { useState } from "react";
 import { postJSON } from "@/lib/api";
 
 const CATEGORIES = [
+  //category 1
   "education",
+
+  //category 2
   "entertainment",
+
+  //category 3
   "food & dining",
+
+  //category 4
   "healthcare",
+
+  //category 5
   "insurance",
+
+  //category 6
   "miscellaneous",
+
+  //category 7
   "rent",
+
+  //category 8
   "savings/investments",
+
+  //category 9
   "shopping",
+   
+  //category 10
   "subscriptions",
+
+  //category 11
   "tax",
+
+//category 12
   "transfers",
+
+  //category 13
   "transportation",
+
+  //category 14
   "utilities"
 ];
 
@@ -43,6 +70,7 @@ export default function ManualTransactionForm({ onTransactionAdded }: ManualTran
       return;
     }
 
+
     setIsSubmitting(true);
     try {
       const response = await postJSON("/transactions/manual", {
@@ -51,6 +79,7 @@ export default function ManualTransactionForm({ onTransactionAdded }: ManualTran
         categoryLabel: category || null,
         remarks: remarks || null,
       });
+
 
       console.log("Transaction created:", response);
 
@@ -84,7 +113,9 @@ export default function ManualTransactionForm({ onTransactionAdded }: ManualTran
         Add Manual Transaction
       </h3>
 
-      {/* Amount and Type Row */}
+      {/* Amount 
+      and 
+      Type Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -142,7 +173,8 @@ export default function ManualTransactionForm({ onTransactionAdded }: ManualTran
         </div>
       </div>
 
-      {/* Category - Only show for expenses */}
+      {/* Category -
+       Only show for expenses */}
       {type === "EXPENSE" && (
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
