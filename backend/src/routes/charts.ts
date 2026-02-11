@@ -5,11 +5,7 @@ import { authMiddleware } from "../middleware/auth";
 const prisma = new PrismaClient();
 const router = Router();
 
-<<<<<<< HEAD
 // Handler function moved above the route definition
-=======
-
->>>>>>> 7f6ec91e73e96207f9ccad91240a9043edc8fcdf
 const getExpenseTransactions = async (req: any, res: any) => {
   try {
     const userId = req.userId;
@@ -33,11 +29,6 @@ const getExpenseTransactions = async (req: any, res: any) => {
         createdAt: "asc"
       }
     });
-<<<<<<< HEAD
-
-=======
-// Map data to use correctedLabel if available, otherwise predictedLabel
->>>>>>> 7f6ec91e73e96207f9ccad91240a9043edc8fcdf
     const formattedData = data.map(transaction => ({
       amountMinus: transaction.amountMinus,
       predictedLabel:
@@ -56,11 +47,7 @@ const getExpenseTransactions = async (req: any, res: any) => {
   }
 };
 
-<<<<<<< HEAD
 // Route definition moved below
-=======
-
->>>>>>> 7f6ec91e73e96207f9ccad91240a9043edc8fcdf
 router.get("/", authMiddleware, getExpenseTransactions);
 
 export default router;
